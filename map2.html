@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Traveler's Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Outfit:wght@300;400;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/topojson-client@3"></script>
+    <style>
+        :root {
+            --visited: #34d399;
+            --visited-stroke: #059669;
+            --planned: #facc15;
+            --planned-stroke: #ca8a04;
+            --unvisited: #f3f4f6;
+            --unvisited-stroke: #d1d5db;
+            --ui-font: 'Outfit', sans-serif;
+            --hand-font: 'Caveat', cursive;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            font-family: var(--ui-font);
+            color: #1f2937;
+            background-color: #c89f74;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.15'/%3E%3C/svg%3E");
+            display: flex;
+            flex-direction: column;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .controls button {
+            font-family: var(--ui-font);
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 7px 14px;
+            border: none;
+            border-radius: 20px;
+            background: #e5e7eb;
+            color: #374151;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .controls button:hover {
+            background: #d1d5db;
+        }
+
+        .controls button.active {
+            background: #1f2937;
+            color: #fff;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .controls .sv {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .controls .sv:hover {
+            background: #bfdbfe;
+        }
+
+        .controls .back-btn {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            color: #92400e;
+            border: 1px solid #f59e0b;
+            box-shadow: 0 2px 6px rgba(245, 158, 11, 0.2);
+        }
+
+        .controls .back-btn:hover {
+            background: linear-gradient(135deg, #fde68a, #fcd34d);
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+        }
+
+        main {
+            flex: 1;
+            padding: 15px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            gap: 15px;
+        }
+
+        #map-container {
+            flex: 1;
+            position: relative;
+            background-color: #fcfcfc;
+            background-image: radial-gradient(#d4d4d8 1px, transparent 1px);
+            background-size: 20px 20px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .paper-pin {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #fca5a5, #dc2626);
+            box-shadow: 2px 4px 6px rgba(0, 0, 0, 0.3), inset -2px -2px 4px rgba(0, 0, 0, 0.2);
+            z-index: 5;
+        }
+
+        .pin-tl {
+            top: 15px;
+            left: 15px;
+        }
+
+        .pin-tr {
+            top: 15px;
+            right: 15px;
+        }
+
+        .pin-bl {
+            bottom: 15px;
+            left: 15px;
+        }
+
+        .pin-br {
+            bottom: 15px;
+            right: 15px;
+        }
+
+        #map-title {
+            position: absolute;
+            bottom: 20px;
+            left: 30px;
+            font-family: var(--hand-font);
+            font-size: 3.5rem;
+            color: #9ca3af;
+            opacity: 0.4;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        #loading {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(252, 252, 252, 0.9);
+            z-index: 10;
+            font-family: var(--hand-font);
+            font-size: 2.5rem;
+            color: #4b5563;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        svg:active {
+            cursor: grabbing;
+        }
+
+        .region {
+            vector-effect: non-scaling-stroke;
+            transition: fill 0.3s, filter 0.3s;
+        }
+
+        .region.unvisited {
+            fill: var(--unvisited);
+            stroke: var(--unvisited-stroke);
+            stroke-width: 0.8px;
+        }
+
+        .region.planned {
+            fill: var(--planned);
+            stroke: var(--planned-stroke);
+            stroke-width: 1px;
+            filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.8));
+        }
+
+        .region.visited {
+            fill: var(--visited);
+            stroke: var(--visited-stroke);
+            stroke-width: 1px;
+        }
+
+        .region:hover {
+            opacity: 0.8;
+            cursor: pointer;
+        }
+
+        .park-pin {
+            vector-effect: non-scaling-stroke;
+            stroke: #fff;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .park-pin.unvisited {
+            fill: #ef4444;
+            stroke-width: 1.5px;
+        }
+
+        .park-pin.planned {
+            fill: var(--planned);
+            stroke-width: 1.5px;
+            filter: drop-shadow(0 0 4px #ca8a04);
+        }
+
+        .park-pin.visited {
+            fill: #10b981;
+            stroke-width: 1.5px;
+        }
+
+        .park-pin:hover {
+            opacity: 0.8;
+        }
+
+        .park-tooltip {
+            position: fixed;
+            pointer-events: none;
+            z-index: 999;
+            background: rgba(17, 24, 39, 0.92);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.15s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transform: translate(-50%, -140%);
+        }
+
+        .park-tooltip.show {
+            opacity: 1;
+        }
+
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            border: 1px solid #ccc;
+        }
+
+        .dot.unvisited {
+            background: var(--unvisited);
+        }
+
+        .dot.planned {
+            background: var(--planned);
+        }
+
+        .dot.visited {
+            background: var(--visited);
+        }
+
+        .sticky-note {
+            width: 370px;
+            background: #fef08a;
+            padding: 25px 20px;
+            z-index: 8;
+            box-shadow: 2px 10px 20px rgba(0, 0, 0, 0.25);
+            border-bottom-right-radius: 20px 5px;
+            position: relative;
+            transform: rotate(1.5deg);
+            display: none;
+            overflow-y: auto;
+            max-height: 100%;
+        }
+
+        .sticky-note.visible {
+            display: block;
+            animation: popIn 0.3s ease-out;
+        }
+
+        .sticky-note::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .sticky-note::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+        }
+
+        .sticky-pin {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 16px;
+            height: 16px;
+            background: radial-gradient(circle at 30% 30%, #ef4444, #991b1b);
+            border-radius: 50%;
+            box-shadow: inset -2px -2px 4px rgba(0, 0, 0, 0.3), 2px 3px 5px rgba(0, 0, 0, 0.4);
+        }
+
+        .close-btn-sticky {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            color: #a16207;
+            cursor: pointer;
+            font-family: var(--ui-font);
+        }
+
+        .sticky-note h2 {
+            font-family: var(--hand-font);
+            font-size: 2rem;
+            margin: 15px 0 8px 0;
+            color: #111827;
+            line-height: 1;
+            border-bottom: 2px dashed rgba(0, 0, 0, 0.1);
+            padding-bottom: 5px;
+        }
+
+        .itin-selectors {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .itin-sel-btn {
+            font-family: var(--ui-font);
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 15px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.5);
+            color: #92400e;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            transition: 0.2s;
+        }
+
+        .itin-sel-btn.sel {
+            background: #92400e;
+            color: #fef08a;
+            border-color: #92400e;
+        }
+
+        .prompt-box {
+            background: rgba(255, 255, 255, 0.45);
+            border: 1px dashed rgba(0, 0, 0, 0.15);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .prompt-text {
+            font-family: var(--ui-font);
+            font-size: 0.72rem;
+            color: #374151;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 150px;
+            overflow-y: auto;
+            margin-bottom: 8px;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .btn-action {
+            font-family: var(--ui-font);
+            font-weight: 600;
+            font-size: 0.78rem;
+            padding: 6px 14px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-copy {
+            background: #1f2937;
+            color: #fff;
+        }
+
+        .btn-copy:hover {
+            background: #374151;
+        }
+
+        .btn-import {
+            background: #059669;
+            color: #fff;
+        }
+
+        .btn-import:hover {
+            background: #047857;
+        }
+
+        .btn-generate {
+            background: #7c3aed;
+            color: #fff;
+        }
+
+        .btn-generate:hover {
+            background: #6d28d9;
+        }
+
+        .import-area {
+            width: 100%;
+            min-height: 80px;
+            border: 1px dashed rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 6px;
+            padding: 8px;
+            font-family: var(--hand-font);
+            font-size: 1.1rem;
+            color: #374151;
+            resize: vertical;
+            outline: none;
+            margin-bottom: 8px;
+        }
+
+        .itin-display {
+            width: 100%;
+            background: transparent;
+            border: none;
+            resize: none;
+            overflow: hidden;
+            font-family: var(--hand-font);
+            font-size: 1.2rem;
+            color: #374151;
+            line-height: 1.3;
+            outline: none;
+            min-height: 60px;
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 20px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .scrapbook {
+            background: #fff;
+            border-radius: 8px;
+            width: 1000px;
+            max-width: 100%;
+            max-height: 95vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            animation: popIn 0.3s ease-out;
+        }
+
+        .scrapbook-header {
+            display: flex;
+            align-items: center;
+            padding: 20px 25px;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f9fafb;
+            border-radius: 8px 8px 0 0;
+            position: relative;
+        }
+
+        .scrapbook-header h2 {
+            font-family: var(--hand-font);
+            font-size: 2.5rem;
+            margin: 0;
+            color: #111827;
+            line-height: 1;
+        }
+
+        .close-btn {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            background: none;
+            border: none;
+            font-size: 2rem;
+            color: #6b7280;
+            cursor: pointer;
+            line-height: 0.8;
+        }
+
+        .progress-container {
+            flex: 1;
+            margin: 0 40px;
+        }
+
+        .progress-bar {
+            height: 12px;
+            background: #e5e7eb;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 5px;
+        }
+
+        #sb-progress-fill {
+            height: 100%;
+            background: #3b82f6;
+            width: 0%;
+            transition: 0.4s;
+        }
+
+        #sb-progress-fill.success {
+            background: #10b981;
+        }
+
+        #sb-progress-text {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #6b7280;
+            text-align: center;
+        }
+
+        .scrapbook-body {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sb-left,
+        .sb-right {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+        }
+
+        .sb-left {
+            border-right: 2px dashed #e5e7eb;
+        }
+
+        .sb-right {
+            position: relative;
+            background: #fafafa;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            text-transform: uppercase;
+            color: #4b5563;
+            margin-top: 0;
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+
+        .hint {
+            font-size: 0.8rem;
+            color: #9ca3af;
+            margin-bottom: 15px;
+        }
+
+        .check-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            gap: 8px;
+        }
+
+        .check-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-top: 3px;
+            cursor: pointer;
+            accent-color: var(--visited-stroke);
+            flex-shrink: 0;
+        }
+
+        .tag {
+            font-family: var(--ui-font);
+            font-size: 0.62rem;
+            font-weight: 700;
+            background: #e5e7eb;
+            color: #4b5563;
+            padding: 3px 5px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            min-width: 65px;
+            text-align: center;
+            margin-top: 3px;
+            flex-shrink: 0;
+        }
+
+        .check-text {
+            font-family: var(--hand-font);
+            font-size: 1.3rem;
+            color: #374151;
+            flex: 1;
+            border: none;
+            background: transparent;
+            border-bottom: 1px dashed #d1d5db;
+            outline: none;
+            transition: 0.2s;
+            line-height: 1.1;
+            padding-bottom: 3px;
+        }
+
+        .check-text:focus {
+            border-bottom-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .done-text {
+            text-decoration: line-through;
+            color: #9ca3af;
+        }
+
+        .btn-reset {
+            margin-top: 15px;
+            width: 100%;
+            padding: 10px;
+            background: #fee2e2;
+            color: #b91c1c;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: var(--ui-font);
+            transition: 0.2s;
+            font-size: 0.85rem;
+        }
+
+        .btn-reset:hover {
+            background: #fecaca;
+        }
+
+        .sb-prompt-section {
+            background: #f0fdf4;
+            border: 1px dashed #86efac;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .sb-prompt-text {
+            font-size: 0.72rem;
+            color: #374151;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            background: #fff;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .sb-import-area {
+            width: 100%;
+            min-height: 100px;
+            border: 1px dashed #d1d5db;
+            background: #fff;
+            border-radius: 6px;
+            padding: 10px;
+            font-family: var(--ui-font);
+            font-size: 0.8rem;
+            color: #374151;
+            resize: vertical;
+            outline: none;
+            margin-bottom: 10px;
+        }
+
+        .locked-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(250, 250, 250, 0.85);
+            backdrop-filter: blur(4px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            padding: 20px;
+        }
+
+        .locked-icon {
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+        }
+
+        .locked-text {
+            font-family: var(--hand-font);
+            font-size: 2.2rem;
+            color: #4b5563;
+            text-align: center;
+            line-height: 1.1;
+        }
+
+        #sb-notes {
+            width: 100%;
+            height: 110px;
+            border: none;
+            resize: none;
+            font-family: var(--hand-font);
+            font-size: 1.5rem;
+            color: #374151;
+            background: repeating-linear-gradient(transparent, transparent 27px, #e5e7eb 27px, #e5e7eb 28px);
+            line-height: 28px;
+            outline: none;
+            margin-bottom: 15px;
+        }
+
+        .gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .photo-card {
+            background: #fff;
+            padding: 6px 6px 20px 6px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+            width: calc(33.33% - 7px);
+            border: 1px solid #e5e7eb;
+        }
+
+        .photo-card img {
+            width: 100%;
+            height: 90px;
+            object-fit: cover;
+            background: #e5e7eb;
+            display: block;
+        }
+
+        .del-photo {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .upload-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: #f3f4f6;
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            color: #4b5563;
+            font-weight: 600;
+            font-family: var(--ui-font);
+            transition: 0.2s;
+        }
+
+        .upload-btn:hover {
+            background: #e5e7eb;
+            border-color: #9ca3af;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f2937;
+            color: #fff;
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        @keyframes popIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9) rotate(0);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) rotate(var(--rot, 0deg));
+            }
+        }
+
+        @media(max-width:850px) {
+            .top-bar {
+                flex-direction: column;
+                gap: 10px;
+                padding: 15px;
+            }
+
+            main {
+                flex-direction: column;
+            }
+
+            .sticky-note {
+                position: absolute;
+                bottom: 15px;
+                left: 15px;
+                right: 15px;
+                width: auto;
+                max-height: 40vh;
+                transform: rotate(0);
+                border-radius: 8px;
+            }
+
+            .scrapbook-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+
+            .progress-container {
+                width: 100%;
+                margin: 0;
+            }
+
+            .close-btn {
+                right: 15px;
+                top: 15px;
+            }
+
+            .scrapbook-body {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+
+            .sb-left,
+            .sb-right {
+                overflow-y: visible;
+            }
+
+            .sb-left {
+                border-right: none;
+                border-bottom: 2px dashed #e5e7eb;
+            }
+
+            .photo-card {
+                width: calc(50% - 5px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="park-tooltip" class="park-tooltip"></div>
+    <div id="toast" class="toast"></div>
+
+    <header class="top-bar">
+        <div class="logo">🌍 Traveler's Dashboard</div>
+        <div class="controls">
+            <button class="back-btn" onclick="window.location.href='Photo Frame.html'">🖼️ Photo Frame</button>
+            <button id="toggle-parks" onclick="toggleParks()">🌲 National Parks</button>
+            <button id="view-us" class="active" onclick="switchView('US')">United States</button>
+            <button id="view-world" onclick="switchView('World')">World</button>
+            <button class="sv" onclick="exportSave()">💾 Export</button>
+            <button class="sv" onclick="document.getElementById('import-file').click()">📂 Import</button>
+            <input type="file" id="import-file" accept=".json" onchange="importSave(event)" style="display:none;">
+        </div>
+    </header>
+
+    <main>
+        <div id="map-container">
+            <div class="paper-pin pin-tl"></div>
+            <div class="paper-pin pin-tr"></div>
+            <div class="paper-pin pin-bl"></div>
+            <div class="paper-pin pin-br"></div>
+            <div id="map-title">United States</div>
+            <div id="loading">Unfolding Maps...</div>
+            <svg id="map"></svg>
+            <div class="legend">
+                <div class="legend-item"><span class="dot unvisited"></span> Unvisited</div>
+                <div class="legend-item"><span class="dot planned"></span> Planned</div>
+                <div class="legend-item"><span class="dot visited"></span> Visited</div>
+            </div>
+        </div>
+
+        <aside id="itinerary-panel" class="sticky-note">
+            <div class="sticky-pin"></div>
+            <button class="close-btn-sticky"
+                onclick="document.getElementById('itinerary-panel').classList.remove('visible')">×</button>
+            <h2>Trip to <span id="itin-region"></span></h2>
+            <div style="margin-bottom:8px;">
+                <h4 style="font-size:0.75rem;text-transform:uppercase;color:#854d0e;margin:0 0 5px 0;font-weight:700;">
+                    Travel Style</h4>
+                <div class="itin-selectors" id="mode-selector">
+                    <button class="itin-sel-btn sel" data-val="roadtrip" onclick="selectOpt(this,'mode')">🚗 Road
+                        Trip</button>
+                    <button class="itin-sel-btn" data-val="flying" onclick="selectOpt(this,'mode')">✈️ Flying</button>
+                    <button class="itin-sel-btn" data-val="budget" onclick="selectOpt(this,'mode')">💰 Budget</button>
+                </div>
+            </div>
+            <div style="margin-bottom:10px;">
+                <h4 style="font-size:0.75rem;text-transform:uppercase;color:#854d0e;margin:0 0 5px 0;font-weight:700;">
+                    Duration</h4>
+                <div class="itin-selectors" id="dur-selector">
+                    <button class="itin-sel-btn sel" data-val="3" onclick="selectOpt(this,'dur')">3 Days</button>
+                    <button class="itin-sel-btn" data-val="7" onclick="selectOpt(this,'dur')">7 Days</button>
+                    <button class="itin-sel-btn" data-val="14" onclick="selectOpt(this,'dur')">14 Days</button>
+                </div>
+            </div>
+            <div id="itin-content"></div>
+        </aside>
+    </main>
+
+    <div id="modal-overlay" class="overlay hidden" onclick="if(event.target.id==='modal-overlay') closeScrapbook()">
+        <div class="scrapbook" onclick="event.stopPropagation()">
+            <div class="scrapbook-header">
+                <h2 id="sb-title">Region Name</h2>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div id="sb-progress-fill"></div>
+                    </div>
+                    <div id="sb-progress-text">No checklist loaded</div>
+                </div>
+                <button class="close-btn" onclick="closeScrapbook()">×</button>
+            </div>
+            <div class="scrapbook-body">
+                <div class="sb-left">
+                    <h3 class="section-title">Experience Checklist</h3>
+                    <p class="hint">Generate an AI prompt, paste the results back to build your checklist. Check off 5+
+                        items to mark as Visited!</p>
+                    <div id="sb-checklist"></div>
+                    <div id="sb-checklist-prompt"></div>
+                    <button class="btn-reset" onclick="clearStatus()">❌ Reset Location History</button>
+                </div>
+                <div class="sb-right">
+                    <div id="sb-locked" class="locked-overlay">
+                        <div class="locked-icon">🔒</div>
+                        <div class="locked-text">Complete 5 checklist items to unlock your Travel Log &amp; Photos!
+                        </div>
+                    </div>
+                    <h3 class="section-title">Polaroid Memory Board</h3>
+                    <textarea id="sb-notes" placeholder="Jot down the best moments, food, and vibes..."
+                        oninput="saveNotes()"></textarea>
+                    <div id="sb-gallery" class="gallery"></div>
+                    <label class="upload-btn" id="sb-upload-btn">
+                        📸 Upload Polaroid Photos (Max 5)
+                        <input type="file" multiple accept="image/*" onchange="handleUpload(event)"
+                            style="display:none;">
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* === 1. STATE & STORAGE === */
+        const STORAGE_KEY = 'travelers_dashboard_v6';
+        let appData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || { regions: {} };
+        const saveData = () => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); } catch (e) { alert("Local storage full! Try deleting some photos."); } };
+
+        let currentMap = 'US', parksVisible = false, currentRegion = null;
+        let usData, worldData, currentProjection;
+        let selMode = 'roadtrip', selDur = '3';
+
+        /* === 2. PARKS DATA === */
+        const parksData = [
+            { id: 'acad', name: 'Acadia NP', coords: [-68.27, 44.33] }, { id: 'amer', name: 'American Samoa NP', coords: [-170.68, -14.25] },
+            { id: 'arch', name: 'Arches NP', coords: [-109.59, 38.68] }, { id: 'badl', name: 'Badlands NP', coords: [-102.50, 43.75] },
+            { id: 'bigb', name: 'Big Bend NP', coords: [-103.25, 29.25] }, { id: 'bisc', name: 'Biscayne NP', coords: [-80.08, 25.65] },
+            { id: 'blac', name: 'Black Canyon NP', coords: [-107.72, 38.57] }, { id: 'bryc', name: 'Bryce Canyon NP', coords: [-112.18, 37.57] },
+            { id: 'cany', name: 'Canyonlands NP', coords: [-109.93, 38.20] }, { id: 'capi', name: 'Capitol Reef NP', coords: [-111.17, 38.20] },
+            { id: 'carl', name: 'Carlsbad Caverns NP', coords: [-104.44, 32.17] }, { id: 'chan', name: 'Channel Islands NP', coords: [-119.42, 34.01] },
+            { id: 'cong', name: 'Congaree NP', coords: [-80.78, 33.78] }, { id: 'crat', name: 'Crater Lake NP', coords: [-122.10, 42.94] },
+            { id: 'cuya', name: 'Cuyahoga Valley NP', coords: [-81.55, 41.24] }, { id: 'deat', name: 'Death Valley NP', coords: [-117.07, 36.24] },
+            { id: 'dena', name: 'Denali NP', coords: [-150.99, 63.33] }, { id: 'dryt', name: 'Dry Tortugas NP', coords: [-82.87, 24.63] },
+            { id: 'ever', name: 'Everglades NP', coords: [-80.93, 25.32] }, { id: 'gate', name: 'Gates of the Arctic NP', coords: [-153.30, 67.78] },
+            { id: 'gata', name: 'Gateway Arch NP', coords: [-90.18, 38.62] }, { id: 'glac', name: 'Glacier NP', coords: [-114.01, 48.80] },
+            { id: 'glab', name: 'Glacier Bay NP', coords: [-137.00, 58.50] }, { id: 'gran', name: 'Grand Canyon NP', coords: [-112.14, 36.06] },
+            { id: 'grat', name: 'Grand Teton NP', coords: [-110.68, 43.73] }, { id: 'grea', name: 'Great Basin NP', coords: [-114.30, 38.98] },
+            { id: 'gres', name: 'Great Sand Dunes NP', coords: [-105.51, 37.73] }, { id: 'grem', name: 'Great Smoky Mountains NP', coords: [-83.53, 35.68] },
+            { id: 'guad', name: 'Guadalupe Mountains NP', coords: [-104.87, 31.92] }, { id: 'hale', name: 'Haleakalā NP', coords: [-156.25, 20.72] },
+            { id: 'hawa', name: 'Hawaiʻi Volcanoes NP', coords: [-155.12, 19.38] }, { id: 'hots', name: 'Hot Springs NP', coords: [-93.05, 34.51] },
+            { id: 'indi', name: 'Indiana Dunes NP', coords: [-87.05, 41.65] }, { id: 'isle', name: 'Isle Royale NP', coords: [-88.93, 48.10] },
+            { id: 'josh', name: 'Joshua Tree NP', coords: [-115.90, 33.79] }, { id: 'katm', name: 'Katmai NP', coords: [-155.00, 58.50] },
+            { id: 'kena', name: 'Kenai Fjords NP', coords: [-149.65, 59.92] }, { id: 'king', name: 'Kings Canyon NP', coords: [-118.55, 36.80] },
+            { id: 'kobu', name: 'Kobuk Valley NP', coords: [-159.28, 67.55] }, { id: 'lake', name: 'Lake Clark NP', coords: [-153.42, 60.97] },
+            { id: 'lass', name: 'Lassen Volcanic NP', coords: [-121.51, 40.49] }, { id: 'mamm', name: 'Mammoth Cave NP', coords: [-86.10, 37.18] },
+            { id: 'mesa', name: 'Mesa Verde NP', coords: [-108.49, 37.18] }, { id: 'moun', name: 'Mount Rainier NP', coords: [-121.75, 46.85] },
+            { id: 'newr', name: 'New River Gorge NP', coords: [-81.08, 38.07] }, { id: 'nort', name: 'North Cascades NP', coords: [-121.20, 48.70] },
+            { id: 'olym', name: 'Olympic NP', coords: [-123.68, 47.97] }, { id: 'petr', name: 'Petrified Forest NP', coords: [-109.78, 34.91] },
+            { id: 'pinn', name: 'Pinnacles NP', coords: [-121.16, 36.48] }, { id: 'redw', name: 'Redwood NP', coords: [-124.00, 41.30] },
+            { id: 'rock', name: 'Rocky Mountain NP', coords: [-105.58, 40.40] }, { id: 'sagu', name: 'Saguaro NP', coords: [-110.50, 32.25] },
+            { id: 'sequ', name: 'Sequoia NP', coords: [-118.56, 36.43] }, { id: 'shen', name: 'Shenandoah NP', coords: [-78.35, 38.53] },
+            { id: 'theo', name: 'Theodore Roosevelt NP', coords: [-103.43, 46.97] }, { id: 'virg', name: 'Virgin Islands NP', coords: [-64.73, 18.33] },
+            { id: 'voya', name: 'Voyageurs NP', coords: [-92.88, 48.50] }, { id: 'whit', name: 'White Sands NP', coords: [-106.17, 32.78] },
+            { id: 'wind', name: 'Wind Cave NP', coords: [-103.48, 43.57] }, { id: 'wran', name: 'Wrangell–St. Elias NP', coords: [-142.00, 61.00] },
+            { id: 'yell', name: 'Yellowstone NP', coords: [-110.50, 44.60] }, { id: 'yose', name: 'Yosemite NP', coords: [-119.50, 37.83] },
+            { id: 'zion', name: 'Zion NP', coords: [-113.05, 37.30] }
+        ];
+
+        /* === 3. UTILITIES === */
+        function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
+        function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+        function copyText(text) { navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard! 📋')).catch(() => { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); showToast('Copied! 📋'); }); }
+        function autoResize(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+
+        /* === 4. D3 MAP ENGINE === */
+        const svg = d3.select('#map');
+        const g = svg.append('g');
+        const tooltip = document.getElementById('park-tooltip');
+        const zoom = d3.zoom().scaleExtent([0.5, 8]).on('zoom', (e) => {
+            g.attr('transform', e.transform);
+            g.selectAll('.park-pin').attr('r', 4 / e.transform.k).attr('stroke-width', 1 / e.transform.k);
+        });
+        svg.call(zoom);
+
+        function getRegionId(name) { return 'reg-' + name.replace(/[^a-zA-Z0-9]/g, '-'); }
+
+        async function init() {
+            try {
+                const [usRes, worldRes] = await Promise.all([
+                    fetch('https://unpkg.com/us-atlas@3/states-10m.json'),
+                    fetch('https://unpkg.com/world-atlas@2/countries-110m.json')
+                ]);
+                const usTopo = await usRes.json();
+                const worldTopo = await worldRes.json();
+                usData = topojson.feature(usTopo, usTopo.objects.states);
+                worldData = topojson.feature(worldTopo, worldTopo.objects.countries);
+                worldData.features = worldData.features.filter(f => f.properties.name !== "Antarctica");
+                document.getElementById('loading').style.display = 'none';
+                renderMap();
+            } catch (e) { document.getElementById('loading').innerText = 'Network Error. Reload page.'; }
+        }
+
+        function renderMap() {
+            g.selectAll('*').remove();
+            const w = document.getElementById('map-container').clientWidth;
+            const h = document.getElementById('map-container').clientHeight;
+            const geoData = currentMap === 'US' ? usData : worldData;
+            currentProjection = currentMap === 'US' ? d3.geoAlbersUsa().fitSize([w, h], geoData) : d3.geoMercator().fitSize([w, h], geoData);
+            const path = d3.geoPath().projection(currentProjection);
+            g.selectAll('.region').data(geoData.features).enter().append('path')
+                .attr('id', d => getRegionId(d.properties.name))
+                .attr('class', d => `region ${appData.regions[d.properties.name]?.status || 'unvisited'}`)
+                .attr('d', path)
+                .on('click', (e, d) => handleRegionClick(d.properties.name));
+            if (currentMap === 'US' && parksVisible) renderParks();
+            svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity);
+        }
+
+        function renderParks() {
+            g.selectAll('.park-pin').remove();
+            g.selectAll('.park-pin')
+                .data(parksData.filter(p => currentProjection(p.coords) !== null))
+                .enter().append('circle')
+                .attr('id', d => getRegionId(d.name))
+                .attr('class', d => `park-pin ${appData.regions[d.name]?.status || 'unvisited'}`)
+                .attr('cx', d => currentProjection(d.coords)[0])
+                .attr('cy', d => currentProjection(d.coords)[1])
+                .attr('r', 4)
+                .on('click', (e, d) => { e.stopPropagation(); handleRegionClick(d.name); })
+                .on('mouseover', (e, d) => { tooltip.innerText = d.name; tooltip.classList.add('show'); })
+                .on('mousemove', (e) => { tooltip.style.left = e.clientX + 'px'; tooltip.style.top = e.clientY + 'px'; })
+                .on('mouseout', () => { tooltip.classList.remove('show'); });
+        }
+
+        function switchView(view) {
+            currentMap = view;
+            document.getElementById('view-us').classList.toggle('active', view === 'US');
+            document.getElementById('view-world').classList.toggle('active', view === 'World');
+            document.getElementById('toggle-parks').style.display = view === 'US' ? 'block' : 'none';
+            document.getElementById('map-title').innerText = view === 'US' ? 'United States' : 'World';
+            renderMap();
+        }
+
+        function toggleParks() {
+            parksVisible = !parksVisible;
+            document.getElementById('toggle-parks').classList.toggle('active', parksVisible);
+            if (parksVisible) renderParks(); else g.selectAll('.park-pin').remove();
+        }
+
+        /* === 5. AI PROMPT GENERATORS === */
+        function generateChecklistPrompt(name) {
+            return `I'm planning a trip to ${name}. Please create a travel experience checklist with items in the following exact format — one item per line, with the category in square brackets first, then the item text.
+
+Include exactly:
+[Food] 3 of the best local foods to try (be specific — name the dish)
+[Restaurant] 2 of the best local restaurants (name the actual restaurant)
+[Attraction] 3 must-see attractions
+[History] 5 cool historical sites worth visiting
+[LGBTQ+] 1 best LGBTQ+ nightlife or scene spot
+[Water] 1 notable waterfall or water feature nearby
+[Nature] 3 of the best hikes or nature viewing spots
+[Wildcard] 2 unique recommendations that don't fit into any other category
+
+Format every line exactly like this example:
+[Food] Deep-dish pizza at Lou Malnati's
+[History] The Freedom Trail walking tour
+
+Do not include numbering, bullets, or any other formatting — just one [Category] Item per line, 20 lines total.`;
+        }
+
+        function generateItineraryPrompt(name, mode, duration) {
+            const data = appData.regions[name];
+            const modeText = { roadtrip: 'road trip (driving between destinations)', flying: 'flying between destinations', budget: 'budget-friendly travel (cheapest transport and accommodation)' }[mode];
+            let checklistRef = '';
+            if (data && data.checklist && data.checklist.length > 0) {
+                checklistRef = '\n\nHere is my experience checklist — please incorporate these into the itinerary:\n' + data.checklist.map(i => `- ${i.t}`).join('\n');
+            }
+            return `Create a ${duration}-day travel itinerary for ${name}.
+Travel style: ${modeText}
+
+For each day include:
+- Morning, Afternoon, and Evening activities
+- Specific places, restaurants, or attractions
+- Travel/driving times between locations if applicable
+- Budget tips if traveling on a budget${checklistRef}
+
+Format:
+Day 1: [Title]
+Morning: ...
+Afternoon: ...
+Evening: ...
+(repeat for each day)`;
+        }
+
+        /* === 6. REGION DATA & INTERACTION === */
+        function initRegionData(name) {
+            if (!appData.regions[name]) {
+                appData.regions[name] = { status: 'unvisited', checklist: [], itineraries: {}, images: [], notes: "" };
+            }
+            if (!appData.regions[name].itineraries) appData.regions[name].itineraries = {};
+            if (!appData.regions[name].checklist) appData.regions[name].checklist = [];
+        }
+
+        function handleRegionClick(name) {
+            currentRegion = name;
+            initRegionData(name);
+            document.getElementById('itin-region').innerText = name;
+            document.getElementById('itinerary-panel').classList.add('visible');
+            renderItineraryPanel();
+            openScrapbook(name);
+        }
+
+        /* === 7. ITINERARY PANEL === */
+        function selectOpt(btn, type) {
+            btn.parentElement.querySelectorAll('.itin-sel-btn').forEach(b => b.classList.remove('sel'));
+            btn.classList.add('sel');
+            if (type === 'mode') selMode = btn.dataset.val; else selDur = btn.dataset.val;
+            renderItineraryPanel();
+        }
+
+        function getItinKey() { return `${selMode}_${selDur}`; }
+
+        function renderItineraryPanel() {
+            const container = document.getElementById('itin-content');
+            if (!currentRegion) return;
+            const data = appData.regions[currentRegion];
+            if (!data) return;
+            const key = getItinKey();
+            const saved = data.itineraries?.[key];
+            if (saved) {
+                container.innerHTML = `
+            <textarea class="itin-display" oninput="autoResize(this);saveCurrentItin()">${escapeHtml(saved)}</textarea>
+            <div class="btn-row" style="margin-top:8px;">
+                <button class="btn-action btn-generate" onclick="clearCurrentItin()">🔄 New Prompt</button>
+            </div>`;
+                setTimeout(() => { const ta = container.querySelector('.itin-display'); if (ta) autoResize(ta); }, 10);
+            } else {
+                const prompt = generateItineraryPrompt(currentRegion, selMode, selDur);
+                container.innerHTML = `
+            <div class="prompt-box">
+                <div class="prompt-text">${escapeHtml(prompt)}</div>
+                <div class="btn-row"><button class="btn-action btn-copy" onclick="copyText(this.closest('.prompt-box').querySelector('.prompt-text').innerText)">📋 Copy Prompt</button></div>
+            </div>
+            <textarea class="import-area" id="itin-import-area" placeholder="Paste your AI-generated itinerary here..."></textarea>
+            <div class="btn-row"><button class="btn-action btn-import" onclick="importItinerary()">✅ Save Itinerary</button></div>`;
+            }
+        }
+
+        function saveCurrentItin() {
+            const ta = document.querySelector('#itin-content .itin-display');
+            if (ta && currentRegion) { appData.regions[currentRegion].itineraries[getItinKey()] = ta.value; saveData(); }
+        }
+
+        function clearCurrentItin() {
+            if (currentRegion) { delete appData.regions[currentRegion].itineraries[getItinKey()]; saveData(); renderItineraryPanel(); }
+        }
+
+        function importItinerary() {
+            const ta = document.getElementById('itin-import-area');
+            if (!ta || !ta.value.trim()) { showToast('Paste an itinerary first!'); return; }
+            appData.regions[currentRegion].itineraries[getItinKey()] = ta.value.trim();
+            saveData(); renderItineraryPanel(); showToast('Itinerary saved! ✈️');
+        }
+
+        /* === 8. SCRAPBOOK MODAL === */
+        function openScrapbook(name) {
+            document.getElementById('sb-title').innerText = name;
+            renderChecklist(); renderGallery(); updateProgress();
+            document.getElementById('modal-overlay').classList.remove('hidden');
+        }
+        function closeScrapbook() { document.getElementById('modal-overlay').classList.add('hidden'); }
+
+        function renderChecklist() {
+            const container = document.getElementById('sb-checklist');
+            const promptContainer = document.getElementById('sb-checklist-prompt');
+            container.innerHTML = ''; promptContainer.innerHTML = '';
+            const data = appData.regions[currentRegion];
+            if (!data.checklist || data.checklist.length === 0) {
+                const prompt = generateChecklistPrompt(currentRegion);
+                promptContainer.innerHTML = `
+            <div class="sb-prompt-section">
+                <h4 style="margin:0 0 8px 0;font-size:0.9rem;color:#065f46;">🤖 Generate Your Checklist</h4>
+                <p style="font-size:0.78rem;color:#6b7280;margin:0 0 10px 0;">Copy this prompt, paste it into ChatGPT / Claude / Gemini, then paste the result back below.</p>
+                <div class="sb-prompt-text">${escapeHtml(prompt)}</div>
+                <div class="btn-row" style="margin-bottom:15px;">
+                    <button class="btn-action btn-copy" onclick="copyText(this.closest('.sb-prompt-section').querySelector('.sb-prompt-text').innerText)">📋 Copy Prompt</button>
+                </div>
+                <textarea class="sb-import-area" id="checklist-import-area" placeholder="Paste your AI-generated checklist here...&#10;&#10;Example:&#10;[Food] Deep-dish pizza at Lou Malnati's&#10;[History] The Freedom Trail&#10;[Nature] Hiking the Appalachian Trail"></textarea>
+                <div class="btn-row"><button class="btn-action btn-import" onclick="importChecklist()">✅ Import Checklist</button></div>
+            </div>`;
+                return;
+            }
+            data.checklist.forEach((item, i) => {
+                const div = document.createElement('div'); div.className = 'check-item';
+                div.innerHTML = `<span class="tag">${escapeHtml(item.c)}</span>
+            <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleCheck(${i},this.checked)">
+            <input type="text" class="check-text ${item.done ? 'done-text' : ''}" value="${escapeHtml(item.t)}" onchange="updateCheckText(${i},this.value)">`;
+                container.appendChild(div);
+            });
+        }
+
+        function importChecklist() {
+            const ta = document.getElementById('checklist-import-area');
+            if (!ta || !ta.value.trim()) { showToast('Paste a checklist first!'); return; }
+            const lines = ta.value.trim().split('\n').filter(l => l.trim());
+            const items = [];
+            for (const line of lines) {
+                const m = line.match(/^\[([^\]]+)\]\s*(.+)/);
+                if (m) items.push({ t: m[2].trim(), c: m[1].trim(), done: false });
+                else if (line.trim() && !line.startsWith('#') && !line.startsWith('---')) items.push({ t: line.trim(), c: 'Other', done: false });
+            }
+            if (items.length === 0) { showToast('No items found. Check the format!'); return; }
+            appData.regions[currentRegion].checklist = items;
+            saveData(); renderChecklist(); updateProgress();
+            showToast(`Imported ${items.length} items! ✅`);
+        }
+
+        function toggleCheck(i, checked) { appData.regions[currentRegion].checklist[i].done = checked; renderChecklist(); updateProgress(); }
+        function updateCheckText(i, text) { appData.regions[currentRegion].checklist[i].t = text; saveData(); }
+
+        function updateProgress() {
+            const data = appData.regions[currentRegion];
+            const total = data.checklist.length;
+            const checked = data.checklist.filter(i => i.done).length;
+            const fill = document.getElementById('sb-progress-fill');
+            const text = document.getElementById('sb-progress-text');
+            const lock = document.getElementById('sb-locked');
+            if (total === 0) {
+                fill.style.width = '0%'; fill.classList.remove('success');
+                text.innerText = 'No checklist loaded yet'; data.status = 'unvisited'; lock.style.display = 'flex';
+            } else {
+                fill.style.width = `${(checked / total) * 100}%`;
+                if (checked >= 5) {
+                    fill.classList.add('success'); text.innerText = `${checked}/${total} — Visited! 🎉`;
+                    data.status = 'visited'; lock.style.display = 'none';
+                } else {
+                    fill.classList.remove('success'); text.innerText = `${checked}/${total} — Complete 5 to unlock Travel Log!`;
+                    data.status = checked > 0 ? 'planned' : 'unvisited'; lock.style.display = 'flex';
+                }
+            }
+            const el = document.getElementById(getRegionId(currentRegion));
+            if (el) el.setAttribute('class', `${el.tagName === 'circle' ? 'park-pin' : 'region'} ${data.status}`);
+            saveData();
+        }
+
+        /* === 9. GALLERY & PHOTOS === */
+        function saveNotes() { appData.regions[currentRegion].notes = document.getElementById('sb-notes').value; saveData(); }
+
+        function clearStatus() {
+            if (confirm("Are you sure you want to reset this location? All plans and photos will be deleted.")) {
+                delete appData.regions[currentRegion]; saveData(); closeScrapbook();
+                document.getElementById('itinerary-panel').classList.remove('visible');
+                const el = document.getElementById(getRegionId(currentRegion));
+                if (el) el.setAttribute('class', `${el.tagName === 'circle' ? 'park-pin' : 'region'} unvisited`);
+            }
+        }
+
+        function renderGallery() {
+            const gal = document.getElementById('sb-gallery');
+            const data = appData.regions[currentRegion];
+            gal.innerHTML = ''; document.getElementById('sb-notes').value = data.notes || '';
+            const images = data.images || [];
+            images.forEach((src, idx) => {
+                const div = document.createElement('div'); div.className = 'photo-card';
+                div.style.transform = `rotate(${(Math.random() * 6 - 3).toFixed(1)}deg)`;
+                div.innerHTML = `<button class="del-photo" onclick="deleteImage(${idx})">×</button><img src="${src}" alt="Travel Photo">`;
+                gal.appendChild(div);
+            });
+            document.getElementById('sb-upload-btn').style.display = images.length >= 5 ? 'none' : 'block';
+        }
+
+        function handleUpload(event) {
+            const files = Array.from(event.target.files);
+            const data = appData.regions[currentRegion];
+            if (!data.images) data.images = [];
+            const slots = 5 - data.images.length;
+            files.slice(0, slots).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_W = 600; let w = img.width, h = img.height;
+                        if (w > MAX_W) { h *= MAX_W / w; w = MAX_W; }
+                        canvas.width = w; canvas.height = h;
+                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        try { data.images.push(canvas.toDataURL('image/jpeg', 0.6)); saveData(); renderGallery(); }
+                        catch (err) { alert("Storage full!"); data.images.pop(); }
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+            event.target.value = '';
+        }
+        function deleteImage(i) { appData.regions[currentRegion].images.splice(i, 1); saveData(); renderGallery(); }
+
+        /* === 10. EXPORT / IMPORT SAVE === */
+        function exportSave() {
+            const blob = new Blob([JSON.stringify(appData, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+            a.download = `travelers_dashboard_${new Date().toISOString().slice(0, 10)}.json`;
+            a.click(); URL.revokeObjectURL(a.href); showToast('Save exported! 💾');
+        }
+
+        function importSave(event) {
+            const file = event.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (imported.regions) {
+                        appData = imported; saveData(); renderMap();
+                        showToast('Save imported successfully! 🎉');
+                    } else { showToast('Invalid save file format.'); }
+                } catch (err) { showToast('Error reading file.'); }
+            };
+            reader.readAsText(file); event.target.value = '';
+        }
+
+        /* === INIT === */
+        window.addEventListener('resize', () => { setTimeout(() => { if (usData) renderMap(); }, 200); });
+        init();
+    </script>
+</body>
+
+</html>

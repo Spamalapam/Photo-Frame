@@ -1,0 +1,2097 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#000000" />
+    <title>Adam's Multimedia Frame</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Kalam:wght@300;400;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,1,0" />
+
+    <style>
+        :root {
+            --accent: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.25);
+            --sticky-cream: #fefce8;
+            --sticky-rose: #fce7f3;
+            --sticky-sky: #e0f2fe;
+            --sticky-mint: #ecfdf5;
+            --panel-bg: #0a0a0f;
+            --panel-card: #16161f;
+            --panel-border: #1e1e2e;
+            --panel-text: #e4e4e7;
+            --panel-muted: #71717a;
+            --transition-photos: 0.9s;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'DM Sans', sans-serif;
+            color: #1f2937;
+            user-select: none;
+            -webkit-user-select: none;
+            overscroll-behavior: none;
+            transition: filter 0.8s ease;
+        }
+
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: #000;
+            transform-origin: center center;
+        }
+
+        /* ============================
+       PHOTO LAYER
+    ============================ */
+        #photo-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            transition: background-color 0.6s;
+        }
+
+        .img-box {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            touch-action: none;
+            overflow: visible;
+            transition: left 0.7s cubic-bezier(0.34, 1.56, 0.64, 1),
+                top 0.7s cubic-bezier(0.34, 1.56, 0.64, 1),
+                width 0.7s cubic-bezier(0.34, 1.56, 0.64, 1),
+                height 0.7s cubic-bezier(0.34, 1.56, 0.64, 1),
+                transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1),
+                opacity 0.5s;
+        }
+
+        .img-box.dragging {
+            transition: none !important;
+        }
+
+        /* --- MODE 1: Single fullscreen --- */
+        .mode-1 .img-box {
+            width: 100% !important;
+            height: 100% !important;
+            top: 0 !important;
+            left: 0 !important;
+            transform: none !important;
+            border: none !important;
+            padding: 0 !important;
+            background: #000;
+        }
+
+        .mode-1 .pin-handle,
+        .mode-1 .resize-handle {
+            display: none !important;
+        }
+
+        /* --- MODE 3: Realistic Corkboard --- */
+        .mode-3 {
+            background-color: #a0845c;
+            background-image:
+                /* Warm highlight top-left */
+                radial-gradient(ellipse at 10% 15%, rgba(210, 185, 145, 0.5) 0%, transparent 45%),
+                /* Dark shadow bottom-right */
+                radial-gradient(ellipse at 90% 90%, rgba(60, 40, 20, 0.3) 0%, transparent 45%),
+                /* Center warmth */
+                radial-gradient(ellipse at 50% 45%, rgba(180, 155, 110, 0.2) 0%, transparent 60%),
+                /* Cork pore layer 1 - tiny dark spots scattered */
+                radial-gradient(circle at 12% 8%, rgba(70, 50, 25, 0.25) 0.5px, transparent 1.2px),
+                radial-gradient(circle at 35% 22%, rgba(80, 55, 30, 0.2) 0.8px, transparent 1.5px),
+                radial-gradient(circle at 58% 15%, rgba(65, 45, 20, 0.22) 0.6px, transparent 1.3px),
+                radial-gradient(circle at 82% 28%, rgba(75, 50, 25, 0.2) 0.7px, transparent 1.4px),
+                radial-gradient(circle at 20% 42%, rgba(85, 60, 30, 0.18) 0.5px, transparent 1.2px),
+                radial-gradient(circle at 45% 38%, rgba(70, 48, 22, 0.22) 0.8px, transparent 1.5px),
+                radial-gradient(circle at 68% 45%, rgba(60, 40, 20, 0.2) 0.6px, transparent 1.3px),
+                radial-gradient(circle at 92% 52%, rgba(80, 55, 28, 0.18) 0.7px, transparent 1.4px),
+                radial-gradient(circle at 8% 62%, rgba(75, 52, 25, 0.22) 0.5px, transparent 1.1px),
+                radial-gradient(circle at 30% 58%, rgba(65, 45, 20, 0.2) 0.8px, transparent 1.5px),
+                radial-gradient(circle at 55% 68%, rgba(85, 60, 30, 0.18) 0.6px, transparent 1.2px),
+                radial-gradient(circle at 78% 72%, rgba(70, 48, 22, 0.22) 0.7px, transparent 1.4px),
+                radial-gradient(circle at 15% 82%, rgba(80, 55, 28, 0.2) 0.5px, transparent 1.2px),
+                radial-gradient(circle at 42% 78%, rgba(60, 40, 18, 0.22) 0.8px, transparent 1.5px),
+                radial-gradient(circle at 65% 88%, rgba(75, 52, 25, 0.18) 0.6px, transparent 1.3px),
+                radial-gradient(circle at 88% 85%, rgba(85, 58, 30, 0.2) 0.7px, transparent 1.4px),
+                /* Cork pore layer 2 — lighter tan spots (lighter fibers) */
+                radial-gradient(circle at 22% 18%, rgba(200, 175, 130, 0.25) 1px, transparent 2.5px),
+                radial-gradient(circle at 48% 32%, rgba(195, 170, 125, 0.2) 1.2px, transparent 3px),
+                radial-gradient(circle at 72% 22%, rgba(210, 180, 135, 0.22) 1px, transparent 2.8px),
+                radial-gradient(circle at 18% 55%, rgba(200, 172, 128, 0.2) 1.3px, transparent 3px),
+                radial-gradient(circle at 52% 62%, rgba(190, 165, 120, 0.22) 1px, transparent 2.5px),
+                radial-gradient(circle at 85% 48%, rgba(205, 178, 132, 0.18) 1.2px, transparent 3px),
+                radial-gradient(circle at 38% 82%, rgba(195, 168, 122, 0.22) 1px, transparent 2.8px),
+                radial-gradient(circle at 75% 78%, rgba(210, 182, 138, 0.2) 1.3px, transparent 3px),
+                /* Large tonal variation patches */
+                radial-gradient(ellipse at 25% 35%, rgba(120, 90, 55, 0.12) 0%, transparent 25%),
+                radial-gradient(ellipse at 70% 60%, rgba(140, 110, 70, 0.1) 0%, transparent 30%),
+                radial-gradient(ellipse at 50% 80%, rgba(110, 85, 50, 0.08) 0%, transparent 20%),
+                radial-gradient(ellipse at 80% 20%, rgba(130, 100, 65, 0.1) 0%, transparent 22%);
+            /* Wood frame edge */
+            box-shadow:
+                inset 0 0 0 5px rgba(55, 35, 15, 0.35),
+                inset 0 0 0 6px rgba(120, 90, 50, 0.15),
+                inset 0 0 25px rgba(50, 30, 10, 0.12);
+        }
+
+        .mode-3 .img-box {
+            background: linear-gradient(160deg, #fffffe 0%, #faf9f5 30%, #f5f3ed 100%);
+            padding: 10px 10px 42px 10px;
+            box-shadow:
+                0 1px 2px rgba(0, 0, 0, 0.08),
+                1px 3px 8px rgba(0, 0, 0, 0.1),
+                3px 8px 20px rgba(0, 0, 0, 0.14),
+                6px 16px 36px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Pins */
+        .pin-handle {
+            position: absolute;
+            top: -11px;
+            left: 50%;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            transform: translateX(-50%);
+            z-index: 50;
+            cursor: move;
+            box-shadow:
+                inset -3px -3px 5px rgba(0, 0, 0, 0.3),
+                inset 2px 2px 4px rgba(255, 255, 255, 0.5),
+                1px 3px 6px rgba(0, 0, 0, 0.4),
+                0 8px 3px -4px rgba(0, 0, 0, 0.15);
+            border: none;
+            display: none;
+        }
+
+        /* Spike shadow beneath pin */
+        .pin-handle::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 3px;
+            height: 8px;
+            background: linear-gradient(to bottom, rgba(100, 100, 100, 0.5), transparent);
+            border-radius: 0 0 1px 1px;
+        }
+
+        .mode-3 .pin-handle {
+            display: block;
+        }
+
+        .pin-red {
+            background: linear-gradient(135deg, #f87171, #dc2626);
+        }
+
+        .pin-blue {
+            background: linear-gradient(135deg, #60a5fa, #2563eb);
+        }
+
+        .pin-green {
+            background: linear-gradient(135deg, #34d399, #059669);
+        }
+
+        .pin-yellow {
+            background: linear-gradient(135deg, #fbbf24, #d97706);
+        }
+
+        .pin-purple {
+            background: linear-gradient(135deg, #a78bfa, #7c3aed);
+        }
+
+        .pin-white {
+            background: linear-gradient(135deg, #f5f5f4, #d6d3d1);
+        }
+
+        .resize-handle {
+            position: absolute;
+            bottom: -4px;
+            right: -4px;
+            width: 28px;
+            height: 28px;
+            cursor: nwse-resize;
+            display: none;
+            z-index: 40;
+            border-radius: 0 0 4px 0;
+        }
+
+        .resize-handle::after {
+            content: '';
+            position: absolute;
+            bottom: 6px;
+            right: 6px;
+            width: 10px;
+            height: 10px;
+            border-right: 2px solid rgba(0, 0, 0, 0.2);
+            border-bottom: 2px solid rgba(0, 0, 0, 0.2);
+        }
+
+        .mode-3 .resize-handle {
+            display: block;
+        }
+
+        .media-container {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
+        .mode-1 .media-container {
+            cursor: default;
+        }
+
+        .media-item {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            opacity: 0;
+            transition: opacity var(--transition-photos) ease;
+            pointer-events: none;
+            display: block;
+        }
+
+        .media-item.loaded {
+            opacity: 1;
+        }
+
+        .mode-3 .media-item {
+            object-fit: cover;
+        }
+
+        /* Crossfade: old image stays behind new one */
+        .media-container .media-item.fading-out {
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            transition: opacity var(--transition-photos) ease;
+        }
+
+        /* Ken Burns */
+        .ken-burns {
+            animation: kb 22s infinite alternate ease-in-out;
+        }
+
+        @keyframes kb {
+            0% {
+                transform: scale(1.0) translate(0, 0);
+            }
+
+            100% {
+                transform: scale(1.12) translate(-1%, -1%);
+            }
+        }
+
+        /* Photo caption area in polaroid bottom */
+        .photo-caption {
+            position: absolute;
+            bottom: 8px;
+            left: 12px;
+            right: 12px;
+            height: 28px;
+            font-family: 'Kalam', cursive;
+            font-size: 0.75rem;
+            color: #999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .mode-3 .photo-caption {
+            display: flex;
+        }
+
+        /* ============================
+       OVERLAY UI
+    ============================ */
+        #overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        #sticky-container {
+            position: absolute;
+            bottom: 12px;
+            left: 0;
+            width: 100%;
+            padding: 0 16px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 12px;
+            pointer-events: none;
+            transition: opacity 0.4s, transform 0.4s;
+        }
+
+        #sticky-container.hidden {
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
+        }
+
+        .sticky-note {
+            position: relative;
+            padding: 18px 22px;
+            pointer-events: auto;
+            cursor: pointer;
+            font-family: 'Kalam', cursive;
+            color: #2a2a2a;
+            transform-origin: center bottom;
+            transition: transform 0.2s;
+            /* 3D depth: layered shadows for lifted paper effect */
+            box-shadow:
+                0 1px 1px rgba(0, 0, 0, 0.08),
+                0 3px 6px rgba(0, 0, 0, 0.1),
+                0 8px 16px rgba(0, 0, 0, 0.12),
+                0 16px 32px rgba(0, 0, 0, 0.08),
+                3px 4px 8px rgba(0, 0, 0, 0.06);
+            /* Slight paper texture gradient */
+            background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, transparent 40%, transparent 60%, rgba(0, 0, 0, 0.02) 100%);
+            background-blend-mode: overlay;
+        }
+
+        .sticky-note::before {
+            /* Folded corner effect */
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(225deg, rgba(0, 0, 0, 0.06) 0%, rgba(0, 0, 0, 0.02) 45%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .sticky-note::after {
+            /* Subtle adhesive strip shadow at top */
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 15%;
+            right: 15%;
+            height: 3px;
+            background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.04), transparent);
+            pointer-events: none;
+        }
+
+        .sticky-note:active {
+            transform: scale(0.97) !important;
+        }
+
+        .widget-pin {
+            position: absolute;
+            top: -9px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            box-shadow:
+                inset -2px -2px 3px rgba(0, 0, 0, 0.3),
+                inset 1px 1px 2px rgba(255, 255, 255, 0.4),
+                1px 2px 4px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+            z-index: 60;
+            border: none;
+        }
+
+        .wp-red {
+            background: linear-gradient(135deg, #fca5a5, #dc2626);
+        }
+
+        .wp-green {
+            background: linear-gradient(135deg, #6ee7b7, #059669);
+        }
+
+        .wp-blue {
+            background: linear-gradient(135deg, #93c5fd, #2563eb);
+        }
+
+        /* Time Widget */
+        #time-widget {
+            background: #fefce8;
+            background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0%, transparent 40%, transparent 60%, rgba(0, 0, 0, 0.02) 100%);
+            transform: rotate(-1.8deg);
+            text-align: center;
+            min-width: 170px;
+        }
+
+        #time-display {
+            font-size: 3.6rem;
+            font-weight: 700;
+            line-height: 1;
+            color: #1a1a1a;
+            letter-spacing: -1px;
+            font-family: 'Kalam', cursive;
+        }
+
+        #ampm {
+            font-size: 1rem;
+            font-weight: 400;
+            color: #777;
+            margin-left: 3px;
+            font-family: 'Kalam', cursive;
+        }
+
+        #date-line {
+            font-size: 1rem;
+            color: #555;
+            margin-top: 6px;
+            font-family: 'Kalam', cursive;
+            font-weight: 400;
+        }
+
+        /* Agenda Widget */
+        #agenda-box {
+            background: #fce7f3;
+            background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0%, transparent 40%, transparent 60%, rgba(0, 0, 0, 0.02) 100%);
+            transform: rotate(1.2deg);
+            display: flex;
+            gap: 18px;
+            text-align: center;
+        }
+
+        .day-col {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .day-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: #888;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            font-family: 'Kalam', cursive;
+        }
+
+        .day-date {
+            font-size: 2.2rem;
+            font-weight: 700;
+            line-height: 1;
+            color: #2a2a2a;
+            font-family: 'Kalam', cursive;
+        }
+
+        .day-sub {
+            font-size: 0.85rem;
+            color: #777;
+            font-family: 'Kalam', cursive;
+        }
+
+        .day-divider {
+            width: 1px;
+            background: rgba(0, 0, 0, 0.12);
+            align-self: stretch;
+            margin: 4px 0;
+        }
+
+        /* Weather Widget — expanded to absorb ticker data */
+        #weather-box {
+            background: #e0f2fe;
+            background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0%, transparent 40%, transparent 60%, rgba(0, 0, 0, 0.02) 100%);
+            transform: rotate(-0.8deg);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            min-width: 210px;
+            text-align: right;
+        }
+
+        #weather-main {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #weather-icon {
+            font-size: 36px;
+            color: #0369a1;
+        }
+
+        #temp {
+            font-size: 3.2rem;
+            font-weight: 700;
+            line-height: 1;
+            color: #1a1a1a;
+            font-family: 'Kalam', cursive;
+        }
+
+        #condition {
+            font-size: 1.05rem;
+            font-weight: 600;
+            text-transform: capitalize;
+            color: #3a3a3a;
+            font-family: 'Kalam', cursive;
+        }
+
+        #weather-details {
+            font-size: 0.85rem;
+            color: #555;
+            margin-top: 5px;
+            font-family: 'Kalam', cursive;
+            line-height: 1.45;
+            text-align: right;
+        }
+
+        #weather-tomorrow {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 4px;
+            font-family: 'Kalam', cursive;
+            line-height: 1.3;
+            text-align: right;
+            border-top: 1px dashed rgba(0, 0, 0, 0.12);
+            padding-top: 4px;
+        }
+
+        /* Ticker tape removed — weather info condensed into sticky */
+
+        /* Photo counter removed */
+
+        /* ============================
+       SETTINGS PANEL
+    ============================ */
+        #settings-btn {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            z-index: 300;
+            width: 44px;
+            height: 44px;
+            background: rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 50%;
+            color: rgba(255, 255, 255, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            cursor: pointer;
+            pointer-events: auto;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        #settings-btn:hover {
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        #settings-btn:active {
+            transform: scale(0.9);
+        }
+
+        #settings-btn .material-symbols-rounded {
+            transition: transform 0.4s;
+        }
+
+        #settings-btn.active .material-symbols-rounded {
+            transform: rotate(90deg);
+        }
+
+        #settings-panel {
+            position: absolute;
+            top: 0;
+            right: -380px;
+            width: 360px;
+            height: 100%;
+            background: var(--panel-bg);
+            color: var(--panel-text);
+            z-index: 280;
+            transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 0;
+            box-sizing: border-box;
+            border-left: 1px solid var(--panel-border);
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: #333 transparent;
+        }
+
+        #settings-panel.open {
+            right: 0;
+        }
+
+        .settings-header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            background: var(--panel-bg);
+            border-bottom: 1px solid var(--panel-border);
+        }
+
+        .settings-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 1.3rem;
+            color: #fff;
+        }
+
+        .close-settings {
+            cursor: pointer;
+            width: 34px;
+            height: 34px;
+            background: var(--panel-card);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: var(--panel-muted);
+            border: 1px solid var(--panel-border);
+            transition: all 0.2s;
+        }
+
+        .close-settings:active {
+            transform: scale(0.92);
+        }
+
+        .settings-body {
+            padding: 16px 24px 40px;
+        }
+
+        .setting-group {
+            margin-bottom: 20px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid var(--panel-border);
+        }
+
+        .setting-group:last-child {
+            border-bottom: none;
+        }
+
+        .setting-label {
+            font-size: 0.65rem;
+            color: var(--panel-muted);
+            margin-bottom: 10px;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+
+        .pro-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            background: var(--panel-card);
+            border: 1px solid var(--panel-border);
+            color: var(--panel-text);
+            border-radius: 12px;
+            text-align: left;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.85rem;
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.15s;
+        }
+
+        .pro-btn:active {
+            transform: scale(0.98);
+            background: #1a1a26;
+        }
+
+        .pro-btn .btn-tag {
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+            background: var(--panel-border);
+            color: var(--panel-muted);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .btn-primary .btn-tag {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .btn-active {
+            border-color: var(--accent);
+        }
+
+        .btn-active .btn-tag {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-danger {
+            background: #1c1015;
+            border-color: #2a1520;
+            color: #f87171;
+        }
+
+        .pro-select {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--panel-card);
+            border: 1px solid var(--panel-border);
+            color: #fff;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            outline: none;
+            margin-bottom: 10px;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .slider-row label {
+            font-size: 0.8rem;
+            color: #aaa;
+            min-width: 80px;
+        }
+
+        .slider-row input[type=range] {
+            flex: 1;
+            accent-color: var(--accent);
+            height: 4px;
+        }
+
+        .slider-row .slider-val {
+            font-size: 0.75rem;
+            color: var(--accent);
+            min-width: 36px;
+            text-align: right;
+            font-weight: 600;
+        }
+
+        #storage-status {
+            font-size: 0.65rem;
+            color: var(--panel-muted);
+            margin: 4px 0 10px;
+            padding: 0 2px;
+        }
+
+        /* ============================
+       CALENDAR MODAL
+    ============================ */
+        #calendar-modal {
+            position: absolute;
+            bottom: -100%;
+            left: 0;
+            width: 100%;
+            height: 95%;
+            background: #fff;
+            transition: bottom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 400;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 -10px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        #calendar-modal.show {
+            bottom: 0;
+        }
+
+        .cal-header {
+            height: 56px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px;
+            border-bottom: 1px solid #eee;
+            color: #333;
+            font-weight: 700;
+            font-size: 16px;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .close-cal {
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f3f4f6;
+            border-radius: 50%;
+            font-size: 16px;
+        }
+
+        /* ============================
+       TOAST NOTIFICATIONS
+    ============================ */
+        #toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(12px);
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 500;
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 500;
+            pointer-events: none;
+        }
+
+        #toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Hide scrollbar on settings */
+        #settings-panel::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        #settings-panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #settings-panel::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <input type="file" id="fileInput" webkitdirectory directory multiple accept="image/*,video/*"
+        style="display:none" />
+
+    <div id="container">
+        <div id="settings-btn"><span class="material-symbols-rounded">settings</span></div>
+
+        <div id="settings-panel">
+            <div class="settings-header">
+                <div class="settings-title">Adam's Frame</div>
+                <div class="close-settings" id="btn-close-settings">
+                    <span class="material-symbols-rounded" style="font-size:18px">close</span>
+                </div>
+            </div>
+            <div class="settings-body">
+
+                <div class="setting-group">
+                    <span class="setting-label">Display</span>
+                    <div class="slider-row">
+                        <label>Brightness</label>
+                        <input type="range" id="brightness-slider" min="20" max="100" step="5" value="100">
+                        <span class="slider-val" id="bright-val">100%</span>
+                    </div>
+                    <div class="slider-row">
+                        <label>Transition</label>
+                        <input type="range" id="transition-slider" min="3" max="20" step="1" value="9">
+                        <span class="slider-val" id="trans-val">0.9s</span>
+                    </div>
+                    <button id="btn-auto-bright" class="pro-btn">
+                        Night Auto-Dim <span class="btn-tag">OFF</span>
+                    </button>
+                    <button id="btn-screen-wake" class="pro-btn">
+                        Keep Screen On <span class="btn-tag">OFF</span>
+                    </button>
+                </div>
+
+                <div class="setting-group">
+                    <span class="setting-label">Photos</span>
+                    <button class="pro-btn btn-primary" id="btn-upload">
+                        <span>Load Folder</span>
+                        <span class="material-symbols-rounded" style="font-size:18px">folder_open</span>
+                    </button>
+                    <div id="storage-status">Checking memory...</div>
+                    <button class="pro-btn btn-danger" id="btn-clear">
+                        <span>Clear All Photos</span>
+                        <span class="material-symbols-rounded" style="font-size:16px">delete_forever</span>
+                    </button>
+                </div>
+
+                <div class="setting-group">
+                    <span class="setting-label">Slideshow</span>
+                    <select id="timer-select" class="pro-select">
+                        <option value="30000">30 Seconds</option>
+                        <option value="60000">1 Minute</option>
+                        <option value="300000">5 Minutes</option>
+                        <option value="600000">10 Minutes</option>
+                        <option value="900000">15 Minutes</option>
+                        <option value="1800000">30 Minutes</option>
+                        <option value="3600000">1 Hour</option>
+                        <option value="10800000">3 Hours</option>
+                        <option value="static">Static (Manual)</option>
+                    </select>
+                    <button id="btn-shuffle" class="pro-btn">
+                        Shuffle <span class="btn-tag">ON</span>
+                    </button>
+                    <button id="btn-motion" class="pro-btn">
+                        Ken Burns Motion <span class="btn-tag">OFF</span>
+                    </button>
+                </div>
+
+                <div class="setting-group">
+                    <span class="setting-label">Layout</span>
+                    <button id="btn-layout" class="pro-btn">
+                        Mode <span class="btn-tag">CORKBOARD</span>
+                    </button>
+                    <button id="btn-auto-arrange" class="pro-btn">
+                        Auto-Arrange <span class="btn-tag">ON</span>
+                    </button>
+                    <button id="btn-reset-pins" class="pro-btn" style="display:none">
+                        Reset Layout <span class="btn-tag">↺</span>
+                    </button>
+                </div>
+
+                <div class="setting-group">
+                    <span class="setting-label">Tools</span>
+                    <button id="btn-rotate" class="pro-btn">
+                        Rotate Canvas <span class="btn-tag">0°</span>
+                    </button>
+                    <button id="btn-fullscreen" class="pro-btn">
+                        Fullscreen <span class="material-symbols-rounded" style="font-size:16px">fullscreen</span>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Photo Layer -->
+        <div id="photo-wrapper" class="mode-3">
+            <div id="box-1" class="img-box">
+                <div class="pin-handle"></div>
+                <div class="media-container" data-box="1"></div>
+                <div class="photo-caption"></div>
+                <div class="resize-handle"></div>
+            </div>
+            <div id="box-2" class="img-box">
+                <div class="pin-handle"></div>
+                <div class="media-container" data-box="2"></div>
+                <div class="photo-caption"></div>
+                <div class="resize-handle"></div>
+            </div>
+            <div id="box-3" class="img-box">
+                <div class="pin-handle"></div>
+                <div class="media-container" data-box="3"></div>
+                <div class="photo-caption"></div>
+                <div class="resize-handle"></div>
+            </div>
+        </div>
+
+        <!-- Overlay UI -->
+        <div id="overlay">
+            <div id="sticky-container">
+                <div id="time-widget" class="sticky-note">
+                    <div class="widget-pin wp-red"></div>
+                    <div id="time-display">00:00</div>
+                    <div id="date-line">Loading...</div>
+                </div>
+
+                <div id="agenda-box" class="sticky-note">
+                    <div class="widget-pin wp-green"></div>
+                    <div class="day-col">
+                        <span class="day-label">Today</span>
+                        <span class="day-date" id="date-today">--</span>
+                        <span class="day-sub" id="date-today-sub"></span>
+                    </div>
+                    <div class="day-divider"></div>
+                    <div class="day-col">
+                        <span class="day-label">Tomorrow</span>
+                        <span class="day-date" id="date-tmrw">--</span>
+                        <span class="day-sub" id="date-tmrw-sub"></span>
+                    </div>
+                </div>
+
+                <div id="weather-box" class="sticky-note">
+                    <div class="widget-pin wp-blue"></div>
+                    <div id="weather-main">
+                        <div id="temp">--°</div>
+                        <span class="material-symbols-rounded" id="weather-icon">wb_sunny</span>
+                    </div>
+                    <div id="condition">Loading</div>
+                    <div id="weather-details">Fetching forecast...</div>
+                    <div id="weather-tomorrow"></div>
+                </div>
+
+                <div id="travel-widget" class="sticky-note" onclick="window.location.href='map2.html'"
+                    style="background:#ecfdf5;transform:rotate(2.2deg);text-align:center;min-width:140px;cursor:pointer;">
+                    <div class="widget-pin wp-green"></div>
+                    <div style="font-size:2.2rem;line-height:1;">✈️</div>
+                    <div
+                        style="font-family:'Kalam',cursive;font-size:1.15rem;font-weight:700;color:#065f46;margin-top:4px;">
+                        Travel Plans</div>
+                    <div style="font-family:'Kalam',cursive;font-size:0.75rem;color:#6b7280;margin-top:2px;">tap to
+                        explore</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendar Modal -->
+        <div id="calendar-modal">
+            <div class="cal-header">
+                <span>Calendar</span>
+                <div class="close-cal" id="btn-close-cal">
+                    <span class="material-symbols-rounded" style="font-size:18px">close</span>
+                </div>
+            </div>
+            <iframe
+                src="https://calendar.google.com/calendar/embed?src=runner4evs%40gmail.com&ctz=America%2FDenver&mode=MONTH&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=0&showCalendars=0&bgcolor=%23ffffff"
+                style="border:0; width:100%; height:calc(100% - 56px);" frameborder="0" scrolling="no" loading="lazy">
+            </iframe>
+        </div>
+
+        <div id="toast"></div>
+    </div>
+
+    <script>
+        /* ===========================================
+           STATE
+        =========================================== */
+        const S = {
+            mediaItems: [],
+            indices: [0, 1, 2],
+            layoutMode: 3,           // Default to corkboard
+            shuffleActive: true,      // Default ON for photo frame
+            motionActive: false,
+            autoArrangeActive: true,  // Default ON
+            screenRotState: 0,
+            userLat: 40.3769,
+            userLon: -111.7958,
+            slideDuration: 3600000,
+            timers: [null, null, null],
+            timeouts: [null, null, null],
+            loadedRatios: { 1: 1, 2: 1, 3: 1 },
+            currentObjectUrls: { 1: null, 2: null, 3: null },
+            pinAssignments: { 1: null, 2: null, 3: null },
+            pinColors: ['pin-red', 'pin-blue', 'pin-green', 'pin-yellow', 'pin-purple', 'pin-white'],
+            autoBright: false,
+            manualBright: 1,
+            wakeLock: null,
+            transitionDuration: 0.9,
+            settingsOpen: false
+        };
+
+        /* ===========================================
+           INDEXED DB
+        =========================================== */
+        const DB_NAME = 'FrameDB', STORE_NAME = 'mediaStore';
+
+        function initDB() {
+            return new Promise((res, rej) => {
+                const r = indexedDB.open(DB_NAME, 2);
+                r.onerror = () => rej(r.error);
+                r.onupgradeneeded = e => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME))
+                        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                };
+                r.onsuccess = e => res(e.target.result);
+            });
+        }
+
+        function makeFileId(f) {
+            return `${f.webkitRelativePath || f.name}::${f.size}::${f.lastModified}`;
+        }
+
+        async function saveFilesToDB(files) {
+            const status = document.getElementById('storage-status');
+            status.innerText = 'Scanning files...';
+            try {
+                const db = await initDB();
+                const valid = Array.from(files).filter(f => f.type.match(/^(image|video)/));
+                const total = valid.length;
+                if (!total) { status.innerText = 'No valid media found.'; return; }
+                let processed = 0;
+                const CHUNK = 40;
+
+                const processChunk = async (start) => {
+                    if (start >= total) {
+                        status.innerText = `${total} items saved.`;
+                        toast(`${total} photos loaded`);
+                        loadFromDB();
+                        return;
+                    }
+                    const tx = db.transaction(STORE_NAME, 'readwrite');
+                    const store = tx.objectStore(STORE_NAME);
+                    const end = Math.min(start + CHUNK, total);
+                    for (let i = start; i < end; i++) {
+                        const f = valid[i];
+                        store.put({ id: makeFileId(f), type: f.type.startsWith('video') ? 'video' : 'image', file: f });
+                    }
+                    tx.oncomplete = () => {
+                        processed = end;
+                        status.innerText = `Saving ${processed}/${total}...`;
+                        setTimeout(() => processChunk(end), 5);
+                    };
+                    tx.onerror = () => { status.innerText = 'Save error. Try again.'; };
+                };
+                processChunk(0);
+            } catch (e) {
+                status.innerText = 'Database error.';
+            }
+        }
+
+        async function loadFromDB() {
+            try {
+                const db = await initDB();
+                const tx = db.transaction(STORE_NAME, 'readonly');
+                const req = tx.objectStore(STORE_NAME).getAll();
+                req.onsuccess = () => {
+                    S.mediaItems = (req.result || []).map(r => ({ id: r.id, type: r.type, file: r.file }));
+                    const el = document.getElementById('storage-status');
+                    el.innerText = S.mediaItems.length ? `${S.mediaItems.length} memories loaded` : 'No photos yet';
+                    if (S.shuffleActive && S.mediaItems.length > 3) shuffleIndices();
+                    refreshAll();
+                };
+            } catch (e) {
+                document.getElementById('storage-status').innerText = 'DB connection error';
+            }
+        }
+
+        async function clearMemory() {
+            if (!confirm('Clear all stored photos?')) return;
+            try {
+                const db = await initDB();
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                tx.objectStore(STORE_NAME).clear();
+                tx.oncomplete = () => {
+                    [1, 2, 3].forEach(revokeBoxUrl);
+                    S.mediaItems = [];
+                    refreshAll();
+                    document.getElementById('storage-status').innerText = 'Memory cleared.';
+                    toast('All photos removed');
+                };
+            } catch (e) { }
+        }
+
+        /* ===========================================
+           MEDIA HELPERS
+        =========================================== */
+        function revokeBoxUrl(n) {
+            if (S.currentObjectUrls[n]) {
+                URL.revokeObjectURL(S.currentObjectUrls[n]);
+                S.currentObjectUrls[n] = null;
+            }
+        }
+
+        function getItemUrl(n, item) {
+            revokeBoxUrl(n);
+            const u = URL.createObjectURL(item.file);
+            S.currentObjectUrls[n] = u;
+            return u;
+        }
+
+        function shuffleIndices() {
+            const L = S.mediaItems.length;
+            if (L < 3) {
+                S.indices = [0, Math.min(1, L - 1), Math.min(2, L - 1)];
+                return;
+            }
+            const picks = new Set();
+            while (picks.size < 3) picks.add(Math.floor(Math.random() * L));
+            S.indices = [...picks];
+        }
+
+        function getNextIdx(curr) {
+            const L = S.mediaItems.length;
+            if (!L) return 0;
+            if (L <= 3) return (curr + 1) % L;
+
+            // Always prevent showing the same photo in multiple frames
+            const showing = new Set(S.indices);
+
+            if (S.shuffleActive) {
+                let n, tries = 0;
+                do {
+                    n = Math.floor(Math.random() * L);
+                    tries++;
+                } while (showing.has(n) && tries < 50);
+                return n;
+            }
+
+            // Sequential: step forward but skip any index already on screen
+            let next = (curr + 1) % L;
+            let safety = 0;
+            while (showing.has(next) && next !== curr && safety < L) {
+                next = (next + 1) % L;
+                safety++;
+            }
+            return next;
+        }
+
+        /* ===========================================
+           RENDERING
+        =========================================== */
+        function renderBox(n, idx) {
+            const box = document.getElementById('box-' + n);
+            const con = box.querySelector('.media-container');
+            const caption = box.querySelector('.photo-caption');
+
+            if (!S.mediaItems.length) {
+                con.innerHTML = '';
+                if (caption) caption.textContent = '';
+                return;
+            }
+            if (idx >= S.mediaItems.length) idx = idx % S.mediaItems.length;
+
+            const item = S.mediaItems[idx];
+
+            // Crossfade: keep old element briefly
+            const oldEl = con.querySelector('.media-item.loaded');
+            if (oldEl) {
+                oldEl.classList.remove('loaded');
+                oldEl.classList.add('fading-out');
+                setTimeout(() => { if (oldEl.parentNode) oldEl.remove(); }, S.transitionDuration * 1000 + 100);
+            }
+
+            const el = document.createElement(item.type === 'video' ? 'video' : 'img');
+            el.className = 'media-item';
+            if (S.motionActive && item.type === 'image' && !document.hidden) el.classList.add('ken-burns');
+
+            // Pin color — stable per box
+            const pin = box.querySelector('.pin-handle');
+            if (pin && S.layoutMode === 3) {
+                if (!S.pinAssignments[n]) {
+                    // Try loading from saved cork first
+                    let saved = null;
+                    try { const d = JSON.parse(localStorage.getItem('cork_pins')); if (d && d[n]) saved = d[n]; } catch (e) { }
+                    S.pinAssignments[n] = saved || S.pinColors[Math.floor(Math.random() * S.pinColors.length)];
+                }
+                pin.className = 'pin-handle ' + S.pinAssignments[n];
+            }
+
+            // Caption from filename
+            if (caption && S.layoutMode === 3) {
+                let name = item.file?.name || item.id || '';
+                name = name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ').replace(/\d{8,}/g, '').trim();
+                if (name.length > 30) name = name.substring(0, 28) + '...';
+                caption.textContent = name || '';
+            }
+
+            const onLoad = () => {
+                el.classList.add('loaded');
+                const r = item.type === 'video'
+                    ? (el.videoWidth ? el.videoHeight / el.videoWidth : 1)
+                    : (el.naturalWidth ? el.naturalHeight / el.naturalWidth : 1);
+                S.loadedRatios[n] = r || 1;
+
+                if (S.layoutMode === 3) {
+                    if (S.autoArrangeActive) applySmartLayout();
+                    else {
+                        const w = parseInt(box.style.width) || 300;
+                        box.style.height = Math.round(w * r + 52) + 'px';
+                    }
+                    saveCork();
+                }
+            };
+
+            if (item.type === 'video') {
+                el.loop = true; el.muted = true; el.autoplay = true;
+                el.playsInline = true; el.oncanplay = onLoad;
+            } else {
+                el.onload = onLoad;
+            }
+
+            el.src = getItemUrl(n, item);
+            con.appendChild(el);
+        }
+
+        /* Photo counter removed */
+
+        function refreshAll() {
+            const wrapper = document.getElementById('photo-wrapper');
+            wrapper.className = 'mode-' + S.layoutMode;
+
+            const sticky = document.getElementById('sticky-container');
+            const resetBtn = document.getElementById('btn-reset-pins');
+
+            if (S.layoutMode === 1) {
+                sticky.classList.add('hidden');
+            } else {
+                sticky.classList.remove('hidden');
+            }
+            resetBtn.style.display = S.layoutMode === 3 ? 'flex' : 'none';
+
+            renderBox(1, S.indices[0]);
+            const b2 = document.getElementById('box-2');
+            const b3 = document.getElementById('box-3');
+
+            if (S.layoutMode === 3) {
+                b2.style.display = 'flex'; b3.style.display = 'flex';
+                renderBox(2, S.indices[1]);
+                renderBox(3, S.indices[2]);
+                loadCork();
+                if (S.autoArrangeActive) setTimeout(applySmartLayout, 50);
+            } else {
+                b2.style.display = 'none'; b3.style.display = 'none';
+                revokeBoxUrl(2); revokeBoxUrl(3);
+            }
+
+            updateTimers(document.getElementById('timer-select').value);
+        }
+
+        /* ===========================================
+           TIMER LOGIC
+        =========================================== */
+        function updateTimers(val) {
+            S.timers.forEach(t => t && clearInterval(t));
+            S.timeouts.forEach(t => t && clearTimeout(t));
+            S.timers = [null, null, null];
+            S.timeouts = [null, null, null];
+            if (val === 'static' || !S.mediaItems.length) return;
+
+            const dur = parseInt(val, 10);
+            S.slideDuration = dur;
+
+            const advance = (boxNum, idxSlot) => {
+                if (!S.mediaItems.length) return;
+                S.indices[idxSlot] = getNextIdx(S.indices[idxSlot]);
+                renderBox(boxNum, S.indices[idxSlot]);
+            };
+
+            S.timers[0] = setInterval(() => advance(1, 0), dur);
+
+            if (S.layoutMode === 3) {
+                // Stagger the 3 boxes so they don't all flip at once
+                S.timeouts[1] = setTimeout(() => {
+                    advance(2, 1);
+                    S.timers[1] = setInterval(() => advance(2, 1), dur);
+                }, Math.round(dur * 0.33));
+
+                S.timeouts[2] = setTimeout(() => {
+                    advance(3, 2);
+                    S.timers[2] = setInterval(() => advance(3, 2), dur);
+                }, Math.round(dur * 0.66));
+            }
+        }
+
+        /* ===========================================
+           SMART LAYOUT ENGINE (The Big Fix)
+        =========================================== */
+        function applySmartLayout() {
+            if (S.layoutMode !== 3 || !S.autoArrangeActive) return;
+
+            const W = window.innerWidth;
+            const H = window.innerHeight;
+            const PAD_TOP = 12;
+            const PAD_BOTTOM = 150; // Bigger sticky notes need more room
+            const PAD_SIDE = 14;
+            const PB = 52; // Polaroid padding (10px top + 42px bottom)
+            const GAP = 12;
+
+            const usableW = W - PAD_SIDE * 2;
+            const usableH = H - PAD_TOP - PAD_BOTTOM;
+
+            const ratios = [S.loadedRatios[1] || 1, S.loadedRatios[2] || 1, S.loadedRatios[3] || 1];
+
+            // boxH(w, r) = w * r + PB
+            // photoArea(w, r) = w * w * r
+            const layouts = [];
+
+            // Helper: compute a layout variant and push it
+            function tryLayout(positions) {
+                let totalArea = 0;
+                let valid = true;
+                for (let i = 0; i < 3; i++) {
+                    const p = positions[i];
+                    if (!p || p.w < 100) { valid = false; break; }
+                    totalArea += p.w * p.w * ratios[i];
+                }
+                if (valid) layouts.push({ area: totalArea, positions });
+            }
+
+            // Clamp width so box doesn't overflow usable height
+            function maxW(r) { return Math.floor((usableH - PB) / Math.max(0.3, r)); }
+
+            // --- LAYOUT A: 3 columns side by side ---
+            {
+                let colW = Math.floor((usableW - GAP * 2) / 3);
+                // Clamp by tallest
+                for (let i = 0; i < 3; i++) colW = Math.min(colW, maxW(ratios[i]));
+                const positions = [0, 1, 2].map(i => {
+                    const bh = colW * ratios[i] + PB;
+                    return {
+                        x: PAD_SIDE + i * (colW + GAP),
+                        y: PAD_TOP + Math.floor((usableH - bh) * 0.35),
+                        w: colW
+                    };
+                });
+                tryLayout(positions);
+            }
+
+            // --- LAYOUT B/C: 1 big + 2 stacked (try both sides, all 3 as "big") ---
+            for (const bigIdx of [0, 1, 2]) {
+                const others = [0, 1, 2].filter(i => i !== bigIdx);
+
+                // Try different split ratios for better fit
+                for (const bigFrac of [0.52, 0.58, 0.64]) {
+                    const smallFrac = 1 - bigFrac;
+
+                    for (const bigOnLeft of [true, false]) {
+                        let bW = Math.floor(usableW * bigFrac - GAP / 2);
+                        let sW = Math.floor(usableW * smallFrac - GAP / 2);
+
+                        // Clamp big to fit height
+                        bW = Math.min(bW, maxW(ratios[bigIdx]));
+
+                        // Clamp smalls so they stack within height
+                        const stackH = () => sW * ratios[others[0]] + PB + GAP + sW * ratios[others[1]] + PB;
+                        if (stackH() > usableH) {
+                            sW = Math.floor((usableH - PB * 2 - GAP) / (ratios[others[0]] + ratios[others[1]]));
+                        }
+                        sW = Math.max(sW, 100);
+
+                        const bigH = bW * ratios[bigIdx] + PB;
+                        const s0H = sW * ratios[others[0]] + PB;
+                        const s1H = sW * ratios[others[1]] + PB;
+
+                        const bigY = PAD_TOP + Math.max(0, Math.floor((usableH - bigH) * 0.3));
+                        const stackTotalH = s0H + GAP + s1H;
+                        const sStartY = PAD_TOP + Math.max(0, Math.floor((usableH - stackTotalH) * 0.3));
+
+                        const positions = [];
+                        if (bigOnLeft) {
+                            positions[bigIdx] = { x: PAD_SIDE, y: bigY, w: bW };
+                            positions[others[0]] = { x: PAD_SIDE + bW + GAP, y: sStartY, w: sW };
+                            positions[others[1]] = { x: PAD_SIDE + bW + GAP, y: sStartY + s0H + GAP, w: sW };
+                        } else {
+                            positions[bigIdx] = { x: PAD_SIDE + sW + GAP, y: bigY, w: bW };
+                            positions[others[0]] = { x: PAD_SIDE, y: sStartY, w: sW };
+                            positions[others[1]] = { x: PAD_SIDE, y: sStartY + s0H + GAP, w: sW };
+                        }
+                        tryLayout(positions);
+                    }
+                }
+            }
+
+            // --- LAYOUT D: 2 on top row + 1 on bottom row ---
+            for (const bottomIdx of [0, 1, 2]) {
+                const topIdxs = [0, 1, 2].filter(i => i !== bottomIdx);
+
+                // Top row: 2 photos side by side
+                const topH = usableH * 0.55;
+                let t0W = Math.floor((topH - PB) / ratios[topIdxs[0]]);
+                let t1W = Math.floor((topH - PB) / ratios[topIdxs[1]]);
+                // Clamp so they fit side by side
+                const topTotalW = t0W + GAP + t1W;
+                if (topTotalW > usableW) {
+                    const scale = usableW / topTotalW;
+                    t0W = Math.floor(t0W * scale);
+                    t1W = Math.floor(t1W * scale);
+                }
+
+                // Bottom row: 1 photo centered
+                const botAvailH = usableH - topH - GAP;
+                let bW = Math.floor((botAvailH - PB) / ratios[bottomIdx]);
+                bW = Math.min(bW, usableW * 0.65);
+
+                const t0X = PAD_SIDE;
+                const t1X = PAD_SIDE + t0W + GAP;
+                const bX = PAD_SIDE + Math.floor((usableW - bW) / 2);
+
+                const positions = [];
+                positions[topIdxs[0]] = { x: t0X, y: PAD_TOP, w: t0W };
+                positions[topIdxs[1]] = { x: t1X, y: PAD_TOP, w: t1W };
+                positions[bottomIdx] = { x: bX, y: PAD_TOP + Math.floor(topH) + GAP, w: bW };
+                tryLayout(positions);
+            }
+
+            // --- LAYOUT E: 1 on top + 2 on bottom row ---
+            for (const topIdx of [0, 1, 2]) {
+                const botIdxs = [0, 1, 2].filter(i => i !== topIdx);
+
+                const topH = usableH * 0.55;
+                let tW = Math.floor((topH - PB) / ratios[topIdx]);
+                tW = Math.min(tW, usableW * 0.7);
+
+                const botAvailH = usableH - topH - GAP;
+                let b0W = Math.floor((botAvailH - PB) / ratios[botIdxs[0]]);
+                let b1W = Math.floor((botAvailH - PB) / ratios[botIdxs[1]]);
+                const botTotalW = b0W + GAP + b1W;
+                if (botTotalW > usableW) {
+                    const scale = usableW / botTotalW;
+                    b0W = Math.floor(b0W * scale);
+                    b1W = Math.floor(b1W * scale);
+                }
+
+                const tX = PAD_SIDE + Math.floor((usableW - tW) / 2);
+                const b0X = PAD_SIDE;
+                const b1X = PAD_SIDE + b0W + GAP;
+
+                const positions = [];
+                positions[topIdx] = { x: tX, y: PAD_TOP, w: tW };
+                positions[botIdxs[0]] = { x: b0X, y: PAD_TOP + Math.floor(topH) + GAP, w: b0W };
+                positions[botIdxs[1]] = { x: b1X, y: PAD_TOP + Math.floor(topH) + GAP, w: b1W };
+                tryLayout(positions);
+            }
+
+            if (!layouts.length) return;
+
+            // Pick layout with maximum total photo area
+            layouts.sort((a, b) => b.area - a.area);
+            const best = layouts[0];
+
+            // Apply with slight organic rotation
+            [1, 2, 3].forEach((boxNum, i) => {
+                const b = document.getElementById('box-' + boxNum);
+                const pos = best.positions[i];
+                const r = ratios[i];
+                const h = Math.round(pos.w * r + PB);
+
+                // Clamp to screen bounds
+                const cx = Math.max(4, Math.min(W - pos.w - 4, pos.x));
+                const cy = Math.max(4, Math.min(H - h - 10, pos.y));
+
+                b.style.width = pos.w + 'px';
+                b.style.height = h + 'px';
+                b.style.left = cx + 'px';
+                b.style.top = cy + 'px';
+
+                // Subtle organic rotation
+                const rot = ((i * 1.7 + 0.5) % 4 - 2).toFixed(1);
+                b.style.transform = `rotate(${rot}deg)`;
+                b.style.zIndex = i + 1;
+            });
+
+            saveCork();
+        }
+
+        /* ===========================================
+           CORK PERSISTENCE
+        =========================================== */
+        function saveCork() {
+            if (S.layoutMode !== 3) return;
+            const d = {};
+            [1, 2, 3].forEach(i => {
+                const b = document.getElementById('box-' + i);
+                d[i] = {
+                    t: b.style.top, l: b.style.left,
+                    w: b.style.width, h: b.style.height,
+                    r: b.style.transform
+                };
+            });
+            localStorage.setItem('cork_layout', JSON.stringify(d));
+            // Save pin colors separately so they're stable
+            localStorage.setItem('cork_pins', JSON.stringify(S.pinAssignments));
+        }
+
+        function loadCork() {
+            if (S.autoArrangeActive) return; // Don't load saved positions if auto-arrange is on
+            try {
+                const d = JSON.parse(localStorage.getItem('cork_layout'));
+                if (!d) return;
+                [1, 2, 3].forEach(i => {
+                    if (!d[i]) return;
+                    const b = document.getElementById('box-' + i);
+                    b.style.top = d[i].t;
+                    b.style.left = d[i].l;
+                    b.style.width = d[i].w;
+                    b.style.height = d[i].h;
+                    b.style.transform = d[i].r;
+                });
+            } catch (e) { }
+            // Load pin colors
+            try {
+                const p = JSON.parse(localStorage.getItem('cork_pins'));
+                if (p) { S.pinAssignments[1] = p[1]; S.pinAssignments[2] = p[2]; S.pinAssignments[3] = p[3]; }
+            } catch (e) { }
+        }
+
+        /* ===========================================
+           WEATHER
+        =========================================== */
+        const WEATHER_ICONS = {
+            0: 'wb_sunny', 1: 'wb_sunny', 2: 'partly_cloudy_day', 3: 'cloud',
+            45: 'foggy', 48: 'foggy', 51: 'grain', 53: 'rainy', 55: 'rainy',
+            56: 'rainy', 57: 'rainy', 61: 'rainy', 63: 'rainy', 65: 'rainy',
+            66: 'rainy', 67: 'rainy', 71: 'ac_unit', 73: 'ac_unit', 75: 'ac_unit',
+            77: 'ac_unit', 80: 'rainy', 81: 'rainy', 82: 'rainy',
+            85: 'ac_unit', 86: 'ac_unit', 95: 'thunderstorm', 96: 'thunderstorm', 99: 'thunderstorm'
+        };
+
+        function weatherLabel(code) {
+            const map = {
+                0: 'Clear Skies', 1: 'Mostly Clear', 2: 'Partly Cloudy', 3: 'Overcast',
+                45: 'Foggy', 48: 'Rime Fog', 51: 'Light Drizzle', 53: 'Drizzle', 55: 'Heavy Drizzle',
+                61: 'Light Rain', 63: 'Rain', 65: 'Heavy Rain', 71: 'Light Snow', 73: 'Snow', 75: 'Heavy Snow',
+                77: 'Snow Grains', 80: 'Rain Showers', 81: 'Mod. Showers', 82: 'Heavy Showers',
+                85: 'Snow Showers', 95: 'Thunderstorm', 96: 'Hail Storm', 99: 'Severe Storm'
+            };
+            return map[code] || 'Weather';
+        }
+
+        async function updateWeather() {
+            try {
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${S.userLat}&longitude=${S.userLon}`
+                    + `&current_weather=true`
+                    + `&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode`
+                    + `&hourly=apparent_temperature,relativehumidity_2m,windspeed_10m`
+                    + `&temperature_unit=fahrenheit&windspeed_unit=mph&timezone=auto`
+                    + `&forecast_days=2`;
+                const r = await fetch(url);
+                const d = await r.json();
+                if (!d.current_weather) return;
+
+                const temp = Math.round(d.current_weather.temperature);
+                const code = d.current_weather.weathercode;
+                const isNight = d.current_weather.is_day === 0;
+                const wind = Math.round(d.current_weather.windspeed);
+
+                const nowHour = new Date().getHours();
+                const feelsLike = d.hourly?.apparent_temperature?.[nowHour]
+                    ? Math.round(d.hourly.apparent_temperature[nowHour]) : temp;
+                const humidity = d.hourly?.relativehumidity_2m?.[nowHour] || '--';
+
+                document.getElementById('temp').innerText = temp + '°';
+                document.getElementById('condition').innerText =
+                    (isNight && code <= 2) ? 'Clear Night' : weatherLabel(code);
+                document.getElementById('weather-icon').innerText =
+                    (isNight && code <= 2) ? 'bedtime' : (WEATHER_ICONS[code] || 'cloud');
+
+                const hi = Math.round(d.daily.temperature_2m_max[0]);
+                const lo = Math.round(d.daily.temperature_2m_min[0]);
+                const precip = d.daily.precipitation_probability_max?.[0] || 0;
+
+                // Today's details — all in the sticky
+                let details = `H ${hi}°  L ${lo}°`;
+                if (Math.abs(feelsLike - temp) >= 3) details += `  ·  Feels ${feelsLike}°`;
+                if (wind > 5) details += `  ·  ${wind} mph`;
+                if (precip > 15) details += `  ·  ${precip}% rain`;
+                document.getElementById('weather-details').innerText = details;
+
+                // Tomorrow's mini-forecast inside the sticky
+                const tmrwEl = document.getElementById('weather-tomorrow');
+                const hiTmrw = d.daily.temperature_2m_max[1] ? Math.round(d.daily.temperature_2m_max[1]) : null;
+                const loTmrw = d.daily.temperature_2m_min[1] ? Math.round(d.daily.temperature_2m_min[1]) : null;
+                const tmrwCode = d.daily.weathercode?.[1];
+                const tmrwPrecip = d.daily.precipitation_probability_max?.[1] || 0;
+
+                if (hiTmrw !== null && tmrwCode !== undefined) {
+                    let tmrw = `Tmrw: ${weatherLabel(tmrwCode)} ${hiTmrw}°/${loTmrw}°`;
+                    if (tmrwPrecip > 20) tmrw += ` · ${tmrwPrecip}%`;
+                    tmrwEl.innerText = tmrw;
+                } else {
+                    tmrwEl.innerText = '';
+                }
+
+            } catch (e) {
+                document.getElementById('weather-details').innerText = 'Unavailable';
+            }
+        }
+
+        /* ===========================================
+           BRIGHTNESS & WAKE LOCK
+        =========================================== */
+        function checkBrightness() {
+            const h = new Date().getHours();
+            const night = h >= 22 || h < 6;
+            const dimNight = h >= 23 || h < 5;
+            let bright = S.manualBright;
+            if (S.autoBright) {
+                if (dimNight) bright = Math.min(bright, 0.3);
+                else if (night) bright = Math.min(bright, 0.5);
+            }
+            document.body.style.filter = `brightness(${bright})`;
+        }
+
+        async function toggleWakeLock() {
+            if (S.wakeLock) {
+                try { await S.wakeLock.release(); } catch (e) { }
+                S.wakeLock = null;
+                return false;
+            }
+            try {
+                S.wakeLock = await navigator.wakeLock.request('screen');
+                S.wakeLock.addEventListener('release', () => { S.wakeLock = null; });
+                return true;
+            } catch (e) {
+                toast('Wake lock not supported');
+                return false;
+            }
+        }
+
+        /* ===========================================
+           SAVE/LOAD SETTINGS
+        =========================================== */
+        function saveSettings() {
+            const settings = {
+                layoutMode: S.layoutMode,
+                shuffleActive: S.shuffleActive,
+                motionActive: S.motionActive,
+                autoArrangeActive: S.autoArrangeActive,
+                autoBright: S.autoBright,
+                manualBright: S.manualBright,
+                slideDuration: S.slideDuration,
+                transitionDuration: S.transitionDuration
+            };
+            localStorage.setItem('frame_settings', JSON.stringify(settings));
+        }
+
+        function loadSettings() {
+            try {
+                const s = JSON.parse(localStorage.getItem('frame_settings'));
+                if (!s) return;
+                if (s.layoutMode !== undefined) S.layoutMode = s.layoutMode;
+                if (s.shuffleActive !== undefined) S.shuffleActive = s.shuffleActive;
+                if (s.motionActive !== undefined) S.motionActive = s.motionActive;
+                if (s.autoArrangeActive !== undefined) S.autoArrangeActive = s.autoArrangeActive;
+                if (s.autoBright !== undefined) S.autoBright = s.autoBright;
+                if (s.manualBright !== undefined) S.manualBright = s.manualBright;
+                if (s.slideDuration !== undefined) S.slideDuration = s.slideDuration;
+                if (s.transitionDuration !== undefined) S.transitionDuration = s.transitionDuration;
+            } catch (e) { }
+        }
+
+        /* ===========================================
+           UI SYNC - Keep buttons in sync with state
+        =========================================== */
+        function syncUI() {
+            const tag = (id) => document.getElementById(id).querySelector('.btn-tag');
+
+            tag('btn-shuffle').textContent = S.shuffleActive ? 'ON' : 'OFF';
+            document.getElementById('btn-shuffle').classList.toggle('btn-active', S.shuffleActive);
+
+            tag('btn-motion').textContent = S.motionActive ? 'ON' : 'OFF';
+            document.getElementById('btn-motion').classList.toggle('btn-active', S.motionActive);
+
+            tag('btn-auto-arrange').textContent = S.autoArrangeActive ? 'ON' : 'OFF';
+            document.getElementById('btn-auto-arrange').classList.toggle('btn-active', S.autoArrangeActive);
+
+            tag('btn-auto-bright').textContent = S.autoBright ? 'ON' : 'OFF';
+            document.getElementById('btn-auto-bright').classList.toggle('btn-active', S.autoBright);
+
+            tag('btn-layout').textContent = S.layoutMode === 1 ? 'SINGLE' : 'CORKBOARD';
+            tag('btn-rotate').textContent = (S.screenRotState * 90) + '°';
+
+            // Timer select
+            const timerSel = document.getElementById('timer-select');
+            const durStr = S.slideDuration.toString();
+            for (const opt of timerSel.options) {
+                if (opt.value === durStr) { timerSel.value = durStr; break; }
+            }
+
+            // Brightness slider
+            document.getElementById('brightness-slider').value = Math.round(S.manualBright * 100);
+            document.getElementById('bright-val').textContent = Math.round(S.manualBright * 100) + '%';
+
+            // Transition slider
+            document.getElementById('transition-slider').value = Math.round(S.transitionDuration * 10);
+            document.getElementById('trans-val').textContent = S.transitionDuration.toFixed(1) + 's';
+
+            document.documentElement.style.setProperty('--transition-photos', S.transitionDuration + 's');
+        }
+
+        /* ===========================================
+           TOAST
+        =========================================== */
+        function toast(msg) {
+            const el = document.getElementById('toast');
+            el.textContent = msg;
+            el.classList.add('show');
+            clearTimeout(el._timer);
+            el._timer = setTimeout(() => el.classList.remove('show'), 2500);
+        }
+
+        /* ===========================================
+           DRAG & RESIZE
+        =========================================== */
+        let drag = { el: null, res: false, down: false, sx: 0, sy: 0, sw: 0, sh: 0, st: 0, sl: 0 };
+
+        document.addEventListener('pointerdown', e => {
+            const p = e.target.closest('.pin-handle');
+            const r = e.target.closest('.resize-handle');
+            if (S.layoutMode !== 3 || (!p && !r)) return;
+
+            drag.el = (p || r).parentElement;
+            drag.res = !!r;
+            drag.down = true;
+            drag.sx = e.clientX; drag.sy = e.clientY;
+            drag.sw = drag.el.offsetWidth; drag.sh = drag.el.offsetHeight;
+            drag.st = drag.el.offsetTop; drag.sl = drag.el.offsetLeft;
+            drag.el.style.zIndex = 100;
+            drag.el.classList.add('dragging');
+
+            if (S.autoArrangeActive) {
+                S.autoArrangeActive = false;
+                syncUI(); saveSettings();
+                toast('Auto-arrange off — drag freely');
+            }
+            e.preventDefault();
+        });
+
+        document.addEventListener('pointermove', e => {
+            if (!drag.down || !drag.el) return;
+            const dx = e.clientX - drag.sx;
+            const dy = e.clientY - drag.sy;
+
+            if (drag.res) {
+                // Corner resize: scale proportionally
+                const nw = Math.max(120, drag.sw + dx);
+                const bn = parseInt(drag.el.querySelector('.media-container').dataset.box);
+                const r = S.loadedRatios[bn] || 1;
+                drag.el.style.width = nw + 'px';
+                drag.el.style.height = Math.round(nw * r + 52) + 'px';
+            } else {
+                drag.el.style.left = (drag.sl + dx) + 'px';
+                drag.el.style.top = (drag.st + dy) + 'px';
+            }
+        });
+
+        document.addEventListener('pointerup', () => {
+            if (drag.el) {
+                drag.el.style.zIndex = '';
+                drag.el.classList.remove('dragging');
+                saveCork();
+            }
+            drag.el = null; drag.down = false;
+        });
+
+        /* ===========================================
+           CLOCK TICK
+        =========================================== */
+        function clockTick() {
+            const now = new Date();
+            const tmrw = new Date(now);
+            tmrw.setDate(now.getDate() + 1);
+
+            // Time
+            const h = now.getHours();
+            const m = now.getMinutes().toString().padStart(2, '0');
+            const h12 = h % 12 || 12;
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            document.getElementById('time-display').innerHTML = `${h12}:${m}<span id="ampm">${ampm}</span>`;
+
+            // Date line under time
+            document.getElementById('date-line').textContent =
+                now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+            // Agenda dates
+            document.getElementById('date-today').textContent = now.getDate();
+            document.getElementById('date-today-sub').textContent =
+                now.toLocaleDateString('en-US', { weekday: 'short' });
+
+            document.getElementById('date-tmrw').textContent = tmrw.getDate();
+            document.getElementById('date-tmrw-sub').textContent =
+                tmrw.toLocaleDateString('en-US', { weekday: 'short' });
+
+            if (S.autoBright) checkBrightness();
+        }
+
+        /* ===========================================
+           ROTATION
+        =========================================== */
+        function applyRot() {
+            const c = document.getElementById('container');
+            const d = S.screenRotState * 90;
+            const w = window.innerWidth, h = window.innerHeight;
+            if (d === 0) c.style.transform = 'none';
+            else if (d === 180) c.style.transform = 'rotate(180deg)';
+            else c.style.transform = `translate(${(w - h) / 2}px, ${(h - w) / 2}px) rotate(${d}deg)`;
+            setTimeout(applySmartLayout, 300);
+        }
+
+        /* ===========================================
+           BIND ALL UI
+        =========================================== */
+        function bindUI() {
+            const $ = id => document.getElementById(id);
+            const click = (id, fn) => $(id).addEventListener('click', fn);
+
+            // Settings toggle
+            click('settings-btn', () => {
+                S.settingsOpen = !S.settingsOpen;
+                $('settings-panel').classList.toggle('open', S.settingsOpen);
+                $('settings-btn').classList.toggle('active', S.settingsOpen);
+            });
+            click('btn-close-settings', () => {
+                S.settingsOpen = false;
+                $('settings-panel').classList.remove('open');
+                $('settings-btn').classList.remove('active');
+            });
+
+            // Widgets
+            click('time-widget', () => {
+                S.settingsOpen = !S.settingsOpen;
+                $('settings-panel').classList.toggle('open', S.settingsOpen);
+                $('settings-btn').classList.toggle('active', S.settingsOpen);
+            });
+            click('agenda-box', () => $('calendar-modal').classList.toggle('show'));
+            click('btn-close-cal', () => $('calendar-modal').classList.remove('show'));
+            click('weather-box', () => { updateWeather(); toast('Refreshing weather...'); });
+
+            // Photos
+            click('btn-upload', () => $('fileInput').click());
+            click('btn-clear', clearMemory);
+            $('fileInput').addEventListener('change', function () {
+                if (this.files.length) saveFilesToDB(this.files);
+            });
+
+            // Layout
+            click('btn-layout', () => {
+                S.layoutMode = S.layoutMode === 1 ? 3 : 1;
+                syncUI(); saveSettings(); refreshAll();
+            });
+            click('btn-auto-arrange', () => {
+                S.autoArrangeActive = !S.autoArrangeActive;
+                syncUI(); saveSettings();
+                if (S.autoArrangeActive) applySmartLayout();
+            });
+            click('btn-reset-pins', () => {
+                localStorage.removeItem('cork_layout');
+                localStorage.removeItem('cork_pins');
+                S.pinAssignments = { 1: null, 2: null, 3: null };
+                S.autoArrangeActive = true;
+                syncUI(); saveSettings(); refreshAll();
+                toast('Layout reset');
+            });
+
+            // Slideshow
+            click('btn-shuffle', () => {
+                S.shuffleActive = !S.shuffleActive;
+                syncUI(); saveSettings();
+            });
+            click('btn-motion', () => {
+                S.motionActive = !S.motionActive;
+                syncUI(); saveSettings(); refreshAll();
+            });
+            $('timer-select').addEventListener('change', e => {
+                const v = e.target.value;
+                S.slideDuration = v === 'static' ? v : parseInt(v, 10);
+                saveSettings();
+                updateTimers(v);
+            });
+
+            // Display
+            $('brightness-slider').addEventListener('input', e => {
+                S.manualBright = parseInt(e.target.value, 10) / 100;
+                $('bright-val').textContent = e.target.value + '%';
+                checkBrightness();
+                saveSettings();
+            });
+            $('transition-slider').addEventListener('input', e => {
+                S.transitionDuration = parseInt(e.target.value, 10) / 10;
+                $('trans-val').textContent = S.transitionDuration.toFixed(1) + 's';
+                document.documentElement.style.setProperty('--transition-photos', S.transitionDuration + 's');
+                saveSettings();
+            });
+            click('btn-auto-bright', () => {
+                S.autoBright = !S.autoBright;
+                syncUI(); saveSettings(); checkBrightness();
+            });
+            click('btn-screen-wake', async () => {
+                const on = await toggleWakeLock();
+                const tag = $('btn-screen-wake').querySelector('.btn-tag');
+                tag.textContent = S.wakeLock ? 'ON' : 'OFF';
+                $('btn-screen-wake').classList.toggle('btn-active', !!S.wakeLock);
+                toast(S.wakeLock ? 'Screen will stay on' : 'Screen wake released');
+            });
+
+            // Tools
+            click('btn-rotate', () => {
+                S.screenRotState = (S.screenRotState + 1) % 4;
+                syncUI(); applyRot();
+            });
+            click('btn-fullscreen', () => {
+                if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => { });
+                else document.exitFullscreen().catch(() => { });
+            });
+
+            // Click photos to advance
+            document.querySelectorAll('.media-container').forEach(mc => {
+                mc.addEventListener('click', () => {
+                    const n = parseInt(mc.dataset.box);
+                    if (!S.mediaItems.length) return;
+                    S.indices[n - 1] = getNextIdx(S.indices[n - 1]);
+                    renderBox(n, S.indices[n - 1]);
+                });
+            });
+
+            // Resize handler on window
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    if (S.autoArrangeActive) applySmartLayout();
+                }, 200);
+            });
+
+            // Re-acquire wake lock on visibility change
+            document.addEventListener('visibilitychange', async () => {
+                if (document.visibilityState === 'visible' && S.wakeLock === null) {
+                    // Try to re-acquire if it was released
+                }
+            });
+        }
+
+        /* ===========================================
+           INIT
+        =========================================== */
+        async function init() {
+            loadSettings();
+            syncUI();
+            bindUI();
+            clockTick();
+            setInterval(clockTick, 1000);
+            checkBrightness();
+
+            await initDB();
+            await loadFromDB();
+
+            updateWeather();
+            setInterval(updateWeather, 600000); // Every 10 min
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
