@@ -1440,13 +1440,17 @@
             // Helper: compute a layout variant and push it
             function tryLayout(positions) {
                 let totalArea = 0;
+                let minArea = Infinity;
                 let valid = true;
                 for (let i = 0; i < 3; i++) {
                     const p = positions[i];
                     if (!p || p.w < 100) { valid = false; break; }
-                    totalArea += p.w * p.w * ratios[i];
+                    const area = p.w * p.w * ratios[i];
+                    totalArea += area;
+                    if (area < minArea) minArea = area;
                 }
-                if (valid) layouts.push({ area: totalArea, positions });
+                const score = (minArea * 5) + totalArea;
+                if (valid) layouts.push({ score, area: totalArea, positions });
             }
 
             // Clamp width so box doesn't overflow usable height
@@ -1472,35 +1476,40 @@
             // --- LAYOUT B/C: 1 big + 2 stacked (try both sides, all 3 as "big") ---
             for (const bigIdx of [0, 1, 2]) {
                 const others = [0, 1, 2].filter(i => i !== bigIdx);
+                const bR = ratios[bigIdx];
+                const s0R = ratios[others[0]];
+                const s1R = ratios[others[1]];
 
-                // Try different split ratios for better fit
-                for (const bigFrac of [0.52, 0.58, 0.64]) {
-                    const smallFrac = 1 - bigFrac;
+                const splitTries = [
+                    Math.floor(usableW * 0.3),
+                    Math.floor(usableW * 0.4),
+                    Math.floor(usableW * 0.5)
+                ];
+
+                for (let target_sW of splitTries) {
+                    let bW = usableW - target_sW - GAP;
+                    bW = Math.min(bW, maxW(bR));
+
+                    const max_sW = Math.floor((usableH - PB * 2 - GAP) / (s0R + s1R));
+                    let sW = Math.min(target_sW, max_sW);
+
+                    // Re-expand bW/sW dynamically to eat up available width
+                    bW = Math.min(usableW - sW - GAP, maxW(bR));
+                    sW = Math.min(usableW - bW - GAP, max_sW);
+
+                    if (sW < 120 || bW < 120) continue;
 
                     for (const bigOnLeft of [true, false]) {
-                        let bW = Math.floor(usableW * bigFrac - GAP / 2);
-                        let sW = Math.floor(usableW * smallFrac - GAP / 2);
-
-                        // Clamp big to fit height
-                        bW = Math.min(bW, maxW(ratios[bigIdx]));
-
-                        // Clamp smalls so they stack within height
-                        const stackH = () => sW * ratios[others[0]] + PB + GAP + sW * ratios[others[1]] + PB;
-                        if (stackH() > usableH) {
-                            sW = Math.floor((usableH - PB * 2 - GAP) / (ratios[others[0]] + ratios[others[1]]));
-                        }
-                        sW = Math.max(sW, 100);
-
-                        const bigH = bW * ratios[bigIdx] + PB;
-                        const s0H = sW * ratios[others[0]] + PB;
-                        const s1H = sW * ratios[others[1]] + PB;
-
-                        const bigY = PAD_TOP + Math.max(0, Math.floor((usableH - bigH) * 0.3));
+                        const bigH = bW * bR + PB;
+                        const s0H = sW * s0R + PB;
+                        const s1H = sW * s1R + PB;
                         const stackTotalH = s0H + GAP + s1H;
-                        const sStartY = PAD_TOP + Math.max(0, Math.floor((usableH - stackTotalH) * 0.3));
+
+                        const bigY = PAD_TOP + Math.max(0, Math.floor((usableH - bigH) * 0.5));
+                        const sStartY = PAD_TOP + Math.max(0, Math.floor((usableH - stackTotalH) * 0.5));
+                        const offsetX = PAD_SIDE + Math.max(0, Math.floor((usableW - (bW + sW + GAP)) / 2));
 
                         const positions = [];
-                        const offsetX = PAD_SIDE + Math.max(0, Math.floor((usableW - (bW + sW + GAP)) / 2));
                         if (bigOnLeft) {
                             positions[bigIdx] = { x: offsetX, y: bigY, w: bW };
                             positions[others[0]] = { x: offsetX + bW + GAP, y: sStartY, w: sW };
@@ -1516,72 +1525,102 @@
             }
 
             // --- LAYOUT D: 2 on top row + 1 on bottom row ---
-            for (const bottomIdx of [0, 1, 2]) {
-                const topIdxs = [0, 1, 2].filter(i => i !== bottomIdx);
+            for (const botIdx of [0, 1, 2]) {
+                const tops = [0, 1, 2].filter(i => i !== botIdx);
+                const t0R = ratios[tops[0]];
+                const t1R = ratios[tops[1]];
+                const bR = ratios[botIdx];
 
-                // Top row: 2 photos side by side
-                const topH = usableH * 0.55;
-                let t0W = Math.floor((topH - PB) / ratios[topIdxs[0]]);
-                let t1W = Math.floor((topH - PB) / ratios[topIdxs[1]]);
-                // Clamp so they fit side by side
-                const topTotalW = t0W + GAP + t1W;
-                if (topTotalW > usableW) {
-                    const scale = usableW / topTotalW;
-                    t0W = Math.floor(t0W * scale);
-                    t1W = Math.floor(t1W * scale);
+                const w0_balanced = Math.floor((usableW - GAP) * t1R / (t0R + t1R));
+                const splits = [
+                    { w0: w0_balanced, w1: usableW - GAP - w0_balanced },
+                    { w0: Math.floor((usableW - GAP) / 2), w1: Math.floor((usableW - GAP) / 2) }
+                ];
+
+                for (const split of splits) {
+                    let w0 = split.w0;
+                    let w1 = split.w1;
+
+                    let topH = Math.max(w0 * t0R, w1 * t1R) + PB;
+                    if (topH > usableH * 0.6) {
+                        const scale = (usableH * 0.6) / topH;
+                        w0 = Math.floor(w0 * scale);
+                        w1 = Math.floor(w1 * scale);
+                        topH = Math.max(w0 * t0R, w1 * t1R) + PB;
+                    }
+
+                    const botAvailH = usableH - topH - GAP;
+                    let bW = Math.min(usableW, Math.floor((botAvailH - PB) / bR));
+
+                    if (w0 < 120 || w1 < 120 || bW < 120) continue;
+
+                    const actTop1H = w0 * t0R + PB;
+                    const actTop2H = w1 * t1R + PB;
+
+                    const topOffsetX = PAD_SIDE + Math.max(0, Math.floor((usableW - (w0 + w1 + GAP)) / 2));
+                    const botOffsetX = PAD_SIDE + Math.max(0, Math.floor((usableW - bW) / 2));
+                    const totalBoxH = topH + GAP + bW * bR + PB;
+                    const startY = PAD_TOP + Math.max(0, Math.floor((usableH - totalBoxH) / 2));
+
+                    const positions = [];
+                    positions[tops[0]] = { x: topOffsetX, y: startY + (topH - actTop1H), w: w0 };
+                    positions[tops[1]] = { x: topOffsetX + w0 + GAP, y: startY + (topH - actTop2H), w: w1 };
+                    positions[botIdx] = { x: botOffsetX, y: startY + topH + GAP, w: bW };
+                    tryLayout(positions);
                 }
-
-                // Bottom row: 1 photo centered
-                const botAvailH = usableH - topH - GAP;
-                let bW = Math.floor((botAvailH - PB) / ratios[bottomIdx]);
-                bW = Math.min(bW, usableW * 0.65);
-
-                const topOffsetX = PAD_SIDE + Math.max(0, Math.floor((usableW - (t0W + t1W + GAP)) / 2));
-                const t0X = topOffsetX;
-                const t1X = topOffsetX + t0W + GAP;
-                const bX = PAD_SIDE + Math.floor((usableW - bW) / 2);
-
-                const positions = [];
-                positions[topIdxs[0]] = { x: t0X, y: PAD_TOP, w: t0W };
-                positions[topIdxs[1]] = { x: t1X, y: PAD_TOP, w: t1W };
-                positions[bottomIdx] = { x: bX, y: PAD_TOP + Math.floor(topH) + GAP, w: bW };
-                tryLayout(positions);
             }
 
             // --- LAYOUT E: 1 on top + 2 on bottom row ---
             for (const topIdx of [0, 1, 2]) {
-                const botIdxs = [0, 1, 2].filter(i => i !== topIdx);
+                const bots = [0, 1, 2].filter(i => i !== topIdx);
+                const tR = ratios[topIdx];
+                const b0R = ratios[bots[0]];
+                const b1R = ratios[bots[1]];
 
-                const topH = usableH * 0.55;
-                let tW = Math.floor((topH - PB) / ratios[topIdx]);
-                tW = Math.min(tW, usableW * 0.7);
+                const w0_balanced = Math.floor((usableW - GAP) * b1R / (b0R + b1R));
+                const splits = [
+                    { w0: w0_balanced, w1: usableW - GAP - w0_balanced },
+                    { w0: Math.floor((usableW - GAP) / 2), w1: Math.floor((usableW - GAP) / 2) }
+                ];
 
-                const botAvailH = usableH - topH - GAP;
-                let b0W = Math.floor((botAvailH - PB) / ratios[botIdxs[0]]);
-                let b1W = Math.floor((botAvailH - PB) / ratios[botIdxs[1]]);
-                const botTotalW = b0W + GAP + b1W;
-                if (botTotalW > usableW) {
-                    const scale = usableW / botTotalW;
-                    b0W = Math.floor(b0W * scale);
-                    b1W = Math.floor(b1W * scale);
+                for (const split of splits) {
+                    let w0 = split.w0;
+                    let w1 = split.w1;
+
+                    let botH = Math.max(w0 * b0R, w1 * b1R) + PB;
+                    if (botH > usableH * 0.6) {
+                        const scale = (usableH * 0.6) / botH;
+                        w0 = Math.floor(w0 * scale);
+                        w1 = Math.floor(w1 * scale);
+                        botH = Math.max(w0 * b0R, w1 * b1R) + PB;
+                    }
+
+                    const topAvailH = usableH - botH - GAP;
+                    let tW = Math.min(usableW, Math.floor((topAvailH - PB) / tR));
+
+                    if (w0 < 120 || w1 < 120 || tW < 120) continue;
+
+                    const actBot1H = w0 * b0R + PB;
+                    const actBot2H = w1 * b1R + PB;
+                    const topActH = tW * tR + PB;
+
+                    const topOffsetX = PAD_SIDE + Math.max(0, Math.floor((usableW - tW) / 2));
+                    const botOffsetX = PAD_SIDE + Math.max(0, Math.floor((usableW - (w0 + w1 + GAP)) / 2));
+                    const totalBoxH = topActH + GAP + botH;
+                    const startY = PAD_TOP + Math.max(0, Math.floor((usableH - totalBoxH) / 2));
+
+                    const positions = [];
+                    positions[topIdx] = { x: topOffsetX, y: startY, w: tW };
+                    positions[bots[0]] = { x: botOffsetX, y: startY + topActH + GAP + (botH - actBot1H), w: w0 };
+                    positions[bots[1]] = { x: botOffsetX + w0 + GAP, y: startY + topActH + GAP + (botH - actBot2H), w: w1 };
+                    tryLayout(positions);
                 }
-
-                const tX = PAD_SIDE + Math.floor((usableW - tW) / 2);
-                const botOffsetX = PAD_SIDE + Math.max(0, Math.floor((usableW - (b0W + b1W + GAP)) / 2));
-                const b0X = botOffsetX;
-                const b1X = botOffsetX + b0W + GAP;
-
-                const positions = [];
-                positions[topIdx] = { x: tX, y: PAD_TOP, w: tW };
-                positions[botIdxs[0]] = { x: b0X, y: PAD_TOP + Math.floor(topH) + GAP, w: b0W };
-                positions[botIdxs[1]] = { x: b1X, y: PAD_TOP + Math.floor(topH) + GAP, w: b1W };
-                tryLayout(positions);
             }
 
             if (!layouts.length) return;
 
-            // Pick layout with maximum total photo area
-            layouts.sort((a, b) => b.area - a.area);
+            // Pick layout with maximum score (balancing minArea and totalArea)
+            layouts.sort((a, b) => b.score - a.score);
             const best = layouts[0];
 
             // Apply with slight organic rotation
