@@ -1032,7 +1032,8 @@
     <script>
         /* === 1. STATE & STORAGE === */
         const STORAGE_KEY = 'travelers_dashboard_v6';
-        let appData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
+        
+const defaultData = {
   "regions": {
     "Utah": {
       "status": "visited",
@@ -10095,6 +10096,17 @@
     }
   }
 };
+let appData = JSON.parse(localStorage.getItem(STORAGE_KEY));
+if (appData && appData.regions) {
+    for (const r in defaultData.regions) {
+        if (!appData.regions[r] || !appData.regions[r].checklist || appData.regions[r].checklist.length === 0) {
+            appData.regions[r] = defaultData.regions[r];
+        }
+    }
+} else {
+    appData = defaultData;
+}
+
         const saveData = () => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); } catch (e) { alert("Local storage full! Try deleting some photos."); } };
 
         let currentMap = 'US', parksVisible = false, currentRegion = null;
