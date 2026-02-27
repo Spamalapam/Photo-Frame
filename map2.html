@@ -10292,10 +10292,14 @@ Evening: ...
         /* === 6. REGION DATA & INTERACTION === */
         function initRegionData(name) {
             if (!appData.regions[name]) {
-                appData.regions[name] = { status: 'unvisited', checklist: [], itineraries: {}, images: [], notes: "" };
+                appData.regions[name] = defaultData.regions[name] ? JSON.parse(JSON.stringify(defaultData.regions[name])) : { status: 'unvisited', checklist: [], itineraries: {}, images: [], notes: "" };
             }
             if (!appData.regions[name].itineraries) appData.regions[name].itineraries = {};
-            if (!appData.regions[name].checklist) appData.regions[name].checklist = [];
+            if (!appData.regions[name].checklist) {
+                appData.regions[name].checklist = defaultData.regions[name]?.checklist ? JSON.parse(JSON.stringify(defaultData.regions[name].checklist)) : [];
+            } else if (appData.regions[name].checklist.length === 0 && defaultData.regions[name]?.checklist?.length > 0) {
+                appData.regions[name].checklist = JSON.parse(JSON.stringify(defaultData.regions[name].checklist));
+            }
         }
 
         function handleRegionClick(name) {
