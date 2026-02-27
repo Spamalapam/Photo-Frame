@@ -1457,10 +1457,11 @@
                 let colW = Math.floor((usableW - GAP * 2) / 3);
                 // Clamp by tallest
                 for (let i = 0; i < 3; i++) colW = Math.min(colW, maxW(ratios[i]));
+                const offsetX = PAD_SIDE + Math.max(0, Math.floor((usableW - (colW * 3 + GAP * 2)) / 2));
                 const positions = [0, 1, 2].map(i => {
                     const bh = colW * ratios[i] + PB;
                     return {
-                        x: PAD_SIDE + i * (colW + GAP),
+                        x: offsetX + i * (colW + GAP),
                         y: PAD_TOP + Math.floor((usableH - bh) * 0.35),
                         w: colW
                     };
@@ -1499,14 +1500,15 @@
                         const sStartY = PAD_TOP + Math.max(0, Math.floor((usableH - stackTotalH) * 0.3));
 
                         const positions = [];
+                        const offsetX = PAD_SIDE + Math.max(0, Math.floor((usableW - (bW + sW + GAP)) / 2));
                         if (bigOnLeft) {
-                            positions[bigIdx] = { x: PAD_SIDE, y: bigY, w: bW };
-                            positions[others[0]] = { x: PAD_SIDE + bW + GAP, y: sStartY, w: sW };
-                            positions[others[1]] = { x: PAD_SIDE + bW + GAP, y: sStartY + s0H + GAP, w: sW };
+                            positions[bigIdx] = { x: offsetX, y: bigY, w: bW };
+                            positions[others[0]] = { x: offsetX + bW + GAP, y: sStartY, w: sW };
+                            positions[others[1]] = { x: offsetX + bW + GAP, y: sStartY + s0H + GAP, w: sW };
                         } else {
-                            positions[bigIdx] = { x: PAD_SIDE + sW + GAP, y: bigY, w: bW };
-                            positions[others[0]] = { x: PAD_SIDE, y: sStartY, w: sW };
-                            positions[others[1]] = { x: PAD_SIDE, y: sStartY + s0H + GAP, w: sW };
+                            positions[bigIdx] = { x: offsetX + sW + GAP, y: bigY, w: bW };
+                            positions[others[0]] = { x: offsetX, y: sStartY, w: sW };
+                            positions[others[1]] = { x: offsetX, y: sStartY + s0H + GAP, w: sW };
                         }
                         tryLayout(positions);
                     }
@@ -1534,8 +1536,9 @@
                 let bW = Math.floor((botAvailH - PB) / ratios[bottomIdx]);
                 bW = Math.min(bW, usableW * 0.65);
 
-                const t0X = PAD_SIDE;
-                const t1X = PAD_SIDE + t0W + GAP;
+                const topOffsetX = PAD_SIDE + Math.max(0, Math.floor((usableW - (t0W + t1W + GAP)) / 2));
+                const t0X = topOffsetX;
+                const t1X = topOffsetX + t0W + GAP;
                 const bX = PAD_SIDE + Math.floor((usableW - bW) / 2);
 
                 const positions = [];
@@ -1564,8 +1567,9 @@
                 }
 
                 const tX = PAD_SIDE + Math.floor((usableW - tW) / 2);
-                const b0X = PAD_SIDE;
-                const b1X = PAD_SIDE + b0W + GAP;
+                const botOffsetX = PAD_SIDE + Math.max(0, Math.floor((usableW - (b0W + b1W + GAP)) / 2));
+                const b0X = botOffsetX;
+                const b1X = botOffsetX + b0W + GAP;
 
                 const positions = [];
                 positions[topIdx] = { x: tX, y: PAD_TOP, w: tW };
