@@ -1062,7 +1062,8 @@
                     <div id="weather-tomorrow"></div>
                 </div>
 
-                <div id="travel-widget" class="sticky-note" onclick="window.location.href='map2.html'"
+                <div id="travel-widget" class="sticky-note"
+                    onclick="document.getElementById('map-iframe-container').style.display='block'"
                     style="background:#ecfdf5;transform:rotate(2.2deg);text-align:center;min-width:140px;cursor:pointer;">
                     <div class="widget-pin wp-green"></div>
                     <div style="font-size:2.2rem;line-height:1;">✈️</div>
@@ -2135,6 +2136,12 @@
 
         init();
     </script>
+
+    <!-- Map Iframe Overlay -->
+    <div id="map-iframe-container"
+        style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:10000; background:#c89f74;">
+        <iframe src="map2.html" style="width:100%; height:100%; border:none;"></iframe>
+    </div>
 </body>
 
 </html>
