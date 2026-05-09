@@ -1106,19 +1106,35 @@ body {
       </div>
 
       <div class="setting-group">
-        <span class="setting-label">Photos · GitHub Album</span>
+        <span class="setting-label">Photos · Google Drive folder</span>
+        <input type="text" class="pro-input" id="gd-folder" placeholder="Folder ID (long string from the share URL)" />
+        <input type="password" class="pro-input" id="gd-key" placeholder="Google API key (starts with AIza…)" />
+        <button class="pro-btn btn-primary" id="btn-gd-sync">
+          <span>Sync from Drive</span>
+          <span class="material-symbols-rounded" style="font-size:18px">cloud_sync</span>
+        </button>
+        <div id="drive-status">Not configured.</div>
+        <div class="help-text">
+          Drag photos into your shared Drive folder from any device. The frame fetches them via the Drive API.
+          <a href="drive-setup.md" target="_blank" style="color:var(--accent);">how to get an API key</a> ·
+          <a href="#" id="open-drive-folder" style="color:var(--accent);">open the folder</a>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <span class="setting-label">Photos · GitHub Album <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--panel-muted);">(alternate)</span></span>
         <input type="text" class="pro-input" id="gh-owner" placeholder="GitHub username (e.g. Spamalapam)" />
         <input type="text" class="pro-input" id="gh-repo"  placeholder="Repository (e.g. Photo-Frame)" />
         <input type="text" class="pro-input" id="gh-path"  placeholder="Folder path (default: photos)" />
         <input type="text" class="pro-input" id="gh-branch" placeholder="Branch (default: main)" />
-        <button class="pro-btn btn-primary" id="btn-gh-sync">
+        <button class="pro-btn" id="btn-gh-sync">
           <span>Sync from GitHub</span>
           <span class="material-symbols-rounded" style="font-size:18px">cloud_sync</span>
         </button>
         <div id="github-status">Not configured.</div>
         <div class="help-text">
-          Add photos to <code>/photos</code> in your repo from any device (drag-and-drop on github.com works on phones).
-          Captions come from <code>photos.json</code>. <a href="#" id="open-photos-readme" style="color:var(--accent);">how does this work?</a>
+          Alternative source: photos in <code>/photos</code> of your GitHub repo. 25 MB per file via web upload — use compress.html for big batches.
+          <a href="#" id="open-photos-readme" style="color:var(--accent);">how does this work?</a>
         </div>
       </div>
 
@@ -1229,6 +1245,11 @@ body {
       ghPath: 'photos',
       ghBranch: 'main',
       lastSync: 0,
+      gdKey: '',
+      gdFolder: '1VN_d4wvVgWbtr3kzyyygO_XthVFZPXfY',
+      gdAccount: 'runner4evs@gmail.com',
+      lastDriveSync: 0,
+      primarySource: 'drive', // 'drive' | 'github' | 'local'
       location: { lat: 35.5951, lon: -82.5515, label: 'Asheville, NC' }
     }),
     rotationIndex: 0,
@@ -1462,6 +1483,125 @@ body {
     }
     const last = lastSync ? new Date(lastSync).toLocaleString() : 'never';
     el.textContent = `Repo: ${ghOwner}/${ghRepo}@${ghBranch||'main'} → /${ghPath||'photos'}\nLast sync: ${last}`;
+    el.className = 'ok';
+  }
+
+  // ---------- Google Drive sync ----------
+  // Lists images from a publicly shared Drive folder via Drive API v3 + API key.
+  // No OAuth required. The folder must be set to "Anyone with the link can view".
+  async function syncFromDrive() {
+    if (STATE.syncing) return;
+    const { gdKey, gdFolder } = STATE.settings;
+    if (!gdKey || !gdFolder) { toast('Set the Drive API key and folder ID first'); return; }
+
+    setSyncStatus('syncing', 'Listing Drive folder…');
+    STATE.syncing = true;
+
+    try {
+      // 1) List image files in the folder
+      const q = encodeURIComponent(`'${gdFolder}' in parents and mimeType contains 'image/' and trashed = false`);
+      const fields = encodeURIComponent('files(id,name,mimeType,size,modifiedTime,md5Checksum)');
+      const listUrl =
+        `https://www.googleapis.com/drive/v3/files?q=${q}&fields=${fields}&pageSize=1000&supportsAllDrives=true&includeItemsFromAllDrives=true&key=${encodeURIComponent(gdKey)}`;
+
+      const r = await fetch(listUrl);
+      if (!r.ok) {
+        const body = await r.text().catch(() => '');
+        throw new Error(`Drive ${r.status}: ${body.slice(0, 200) || r.statusText}`);
+      }
+      const j = await r.json();
+      const files = (j.files || []).filter(f => /^image\//.test(f.mimeType || ''));
+      if (files.length === 0) {
+        setSyncStatus('warn', 'Drive folder is empty');
+        toast('No images found in the Drive folder');
+        STATE.syncing = false;
+        return;
+      }
+
+      // Sort by name (so prefixed dates land in order naturally)
+      files.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+      // 2) Try to read optional photos.json metadata from the same folder
+      const metaFile = files.find(f => f.name === 'photos.json');
+      let meta = {};
+      if (metaFile) {
+        try {
+          const mr = await fetch(
+            `https://www.googleapis.com/drive/v3/files/${metaFile.id}?alt=media&key=${encodeURIComponent(gdKey)}`
+          );
+          if (mr.ok) {
+            const json = await mr.json();
+            if (Array.isArray(json.photos)) json.photos.forEach(p => { if (p.file) meta[p.file] = p; });
+          }
+        } catch {}
+      }
+
+      // 3) Clear previous drive cache
+      await dbDeleteBySource('drive');
+
+      // 4) Download each photo into IDB
+      let done = 0;
+      for (const f of files) {
+        if (f.name === 'photos.json') continue;
+        try {
+          const dl = await fetch(
+            `https://www.googleapis.com/drive/v3/files/${f.id}?alt=media&key=${encodeURIComponent(gdKey)}`
+          );
+          if (!dl.ok) { console.warn('Drive dl failed', f.name, dl.status); continue; }
+          const blob = await dl.blob();
+          const m = meta[f.name] || {};
+          const rec = {
+            id: 'gd:' + f.id,
+            blob,
+            source: 'drive',
+            file: f.name,
+            caption: m.caption || '',
+            location: m.location || '',
+            date: m.date || (f.modifiedTime || '').slice(0, 10),
+            order: typeof m.order === 'number' ? m.order : null,
+            driveId: f.id,
+            sha: f.md5Checksum || ''
+          };
+          await dbPut(rec);
+          done++;
+          setSyncStatus('syncing', `Downloading ${done}/${files.length}…`);
+        } catch (e) {
+          console.warn('Drive download failed for', f.name, e);
+        }
+      }
+
+      STATE.settings.lastDriveSync = Date.now();
+      saveSettings();
+      await loadPhotosFromDB();
+      renderCorkBoard();
+      setSyncStatus('ok', `Synced ${done} from Drive`);
+      setTimeout(() => $('#sync-status').classList.remove('visible'), 4000);
+      toast(`Synced ${done} photos from Google Drive`);
+      updateDriveStatus();
+    } catch (e) {
+      console.error(e);
+      let hint = e.message || 'Sync failed';
+      if (/403/.test(hint)) hint += ' — folder must be shared "Anyone with the link can view"';
+      else if (/400/.test(hint)) hint += ' — check the folder ID and that the Drive API is enabled for your key';
+      setSyncStatus('error', hint.slice(0, 80));
+      toast('Drive sync failed: ' + hint.slice(0, 90));
+    } finally {
+      STATE.syncing = false;
+    }
+  }
+
+  function updateDriveStatus() {
+    const el = $('#drive-status');
+    const { gdKey, gdFolder, lastDriveSync, gdAccount } = STATE.settings;
+    if (!gdFolder || !gdKey) {
+      el.textContent = !gdFolder
+        ? 'Folder ID missing.'
+        : 'API key missing — see "how to get an API key" below.';
+      el.className = '';
+      return;
+    }
+    const last = lastDriveSync ? new Date(lastDriveSync).toLocaleString() : 'never';
+    el.textContent = `Account: ${gdAccount || '(public folder)'}\nFolder: …${gdFolder.slice(-10)}\nLast sync: ${last}`;
     el.className = 'ok';
   }
 
@@ -1875,6 +2015,25 @@ body {
     });
     $('#btn-gh-sync').addEventListener('click', syncFromGitHub);
 
+    // Google Drive fields
+    $('#gd-folder').value = f.gdFolder || '';
+    $('#gd-key').value    = f.gdKey || '';
+    ['gd-folder','gd-key'].forEach(id => {
+      $('#'+id).addEventListener('change', () => {
+        STATE.settings.gdFolder = $('#gd-folder').value.trim();
+        STATE.settings.gdKey    = $('#gd-key').value.trim();
+        saveSettings();
+        updateDriveStatus();
+      });
+    });
+    $('#btn-gd-sync').addEventListener('click', syncFromDrive);
+    $('#open-drive-folder').addEventListener('click', (e) => {
+      e.preventDefault();
+      const id = STATE.settings.gdFolder;
+      if (id) window.open(`https://drive.google.com/drive/folders/${id}`, '_blank');
+      else toast('Set a folder ID first');
+    });
+
     // Local upload
     $('#btn-upload').addEventListener('click', () => $('#fileInput').click());
     $('#fileInput').addEventListener('change', (e) => {
@@ -1957,6 +2116,7 @@ body {
     paintToggle('#btn-screen-wake', STATE.settings.screenWake);
     paintMode();
     updateGitHubStatus();
+    updateDriveStatus();
   }
 
   function bindSlider(sliderSel, valSel, key, fmt, onChange) {
@@ -2043,10 +2203,14 @@ body {
     await loadPhotosFromDB();
     renderCorkBoard();
 
-    // Auto-sync if last sync was > 1 hour ago and config exists
-    if (STATE.settings.ghOwner && STATE.settings.ghRepo) {
+    // Auto-sync on first load (or when stale and no cache)
+    const empty = STATE.photos.length === 0;
+    if (STATE.settings.gdKey && STATE.settings.gdFolder) {
+      const stale = Date.now() - (STATE.settings.lastDriveSync || 0) > 1000 * 60 * 60;
+      if (empty || stale) syncFromDrive();
+    } else if (STATE.settings.ghOwner && STATE.settings.ghRepo) {
       const stale = Date.now() - (STATE.settings.lastSync || 0) > 1000 * 60 * 60;
-      if (stale && STATE.photos.length === 0) syncFromGitHub();
+      if (empty && stale) syncFromGitHub();
     }
 
     updateWeather();
