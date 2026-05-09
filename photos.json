@@ -1,0 +1,26 @@
+{
+  "_comment": "Photo metadata for Adam's Cork Frame. The 'file' name must match the file in /photos exactly. Everything else is optional.",
+  "photos": [
+    {
+      "file": "example-1.jpg",
+      "caption": "Sunrise over Mt. Mitchell",
+      "location": "Black Mountain, NC",
+      "date": "2025-10-12",
+      "order": 1
+    },
+    {
+      "file": "example-2.jpg",
+      "caption": "Pickle the cat in his Friday pose",
+      "location": "Living room",
+      "date": "2025-11-03",
+      "order": 2
+    },
+    {
+      "file": "example-3.jpg",
+      "caption": "Trail run, mile 8",
+      "location": "Pisgah National Forest, NC",
+      "date": "2026-04-22",
+      "order": 3
+    }
+  ]
+}
