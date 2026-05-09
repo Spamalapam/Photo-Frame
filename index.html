@@ -277,6 +277,37 @@ body {
     opacity 0.5s;
 }
 .img-box.dragging { transition: none !important; }
+.img-box.locked {
+  z-index: 12;
+}
+.img-box.locked .pin-handle {
+  box-shadow:
+    inset -3px -3px 6px rgba(0,0,0,0.35),
+    inset 3px 3px 5px rgba(255,255,255,0.55),
+    0 0 0 4px rgba(251, 191, 36, 0.45),
+    1px 4px 7px rgba(0,0,0,0.45);
+}
+.lock-badge {
+  position: absolute;
+  top: -18px; right: -18px;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 55;
+  background: #fbbf24;
+  color: #3a2410;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.35);
+  font-size: 20px;
+}
+.img-box.locked .lock-badge { display: flex; }
+.img-box.manual-arrange .media-container {
+  cursor: grab;
+}
+.img-box.manual-arrange.dragging .media-container {
+  cursor: grabbing;
+}
 
 /* --- MODE 1: single fullscreen --- */
 .mode-1 .img-box {
@@ -437,6 +468,7 @@ body {
   overflow: hidden; position: relative;
   pointer-events: auto;
   cursor: pointer;
+  background: #111;
 }
 .mode-1 .media-container { cursor: default; }
 
@@ -452,7 +484,8 @@ body {
   display: block;
 }
 .media-item.loaded { opacity: 1; transform: scale(1); }
-.mode-3 .media-item { object-fit: cover; }
+.mode-3 .media-item { object-fit: contain; }
+video.media-item { background: #111; }
 
 .media-container .media-item.fading-out {
   position: absolute; top: 0; left: 0;
@@ -1107,16 +1140,15 @@ body {
 
       <div class="setting-group">
         <span class="setting-label">Photos · Google Drive folder</span>
-        <input type="text" class="pro-input" id="gd-folder" placeholder="Folder ID (long string from the share URL)" />
-        <input type="password" class="pro-input" id="gd-key" placeholder="Google API key (starts with AIza…)" />
+        <input type="text" class="pro-input" id="gd-folder" placeholder="Folder ID (long string from the share URL)" readonly />
+        <input type="password" class="pro-input" id="gd-key" placeholder="Google API key (starts with AIza…)" readonly />
         <button class="pro-btn btn-primary" id="btn-gd-sync">
           <span>Sync from Drive</span>
           <span class="material-symbols-rounded" style="font-size:18px">cloud_sync</span>
         </button>
         <div id="drive-status">Not configured.</div>
         <div class="help-text">
-          Drag photos into your shared Drive folder from any device. The frame fetches them via the Drive API.
-          <a href="drive-setup.md" target="_blank" style="color:var(--accent);">how to get an API key</a> ·
+          Drag photos or videos into your shared Drive folder from any device. The frame fetches them via the baked-in Drive API settings.
           <a href="#" id="open-drive-folder" style="color:var(--accent);">open the folder</a>
         </div>
       </div>
@@ -1179,29 +1211,35 @@ body {
         <button class="pro-btn" id="btn-tape">
           Washi Tape on Photos <span class="btn-tag">ON</span>
         </button>
+        <button class="pro-btn" id="btn-arrange">
+          Manual Move Photos <span class="btn-tag">OFF</span>
+        </button>
         <button class="pro-btn" id="btn-screen-wake">
           Keep Screen On <span class="btn-tag">OFF</span>
         </button>
+        <div class="help-text">
+          Tap a Polaroid to change it. Press and hold to lock or unlock it. Manual mode lets you drag Polaroids around the cork.
+        </div>
       </div>
 
       <div class="setting-group">
         <span class="setting-label">Location · Weather</span>
         <div class="input-row">
-          <input type="text" class="pro-input" id="loc-input" placeholder="City, State (e.g. Asheville, NC)" />
+          <input type="text" class="pro-input" id="loc-input" value="American Fork, UT" readonly />
         </div>
         <button class="pro-btn" id="btn-loc-set">
-          <span>Update Location</span>
-          <span class="material-symbols-rounded" style="font-size:16px">my_location</span>
+          <span>American Fork Weather Locked</span>
+          <span class="material-symbols-rounded" style="font-size:16px">location_on</span>
         </button>
-        <div id="loc-status" style="font-size:0.75rem;color:var(--panel-muted);margin-top:6px;">—</div>
+        <div id="loc-status" style="font-size:0.75rem;color:var(--panel-muted);margin-top:6px;">Always showing American Fork, Utah.</div>
       </div>
 
       <div class="setting-group">
         <span class="setting-label">About</span>
         <div class="help-text">
           v2 · cork-forward · optimized for Galaxy Tab S7+ landscape.<br>
-          Photos sync from GitHub, cache offline.<br>
-          Tap settings → Sync from GitHub to refresh.
+          Photos and videos load from Google Drive and cache offline.<br>
+          Tap settings → Sync from Drive to refresh immediately.
         </div>
       </div>
 
@@ -1227,11 +1265,20 @@ body {
 (() => {
   'use strict';
 
+  const DEFAULT_DRIVE_API_KEY = 'AIzaSyCV3jO5ueYzlVgitH-UUxYC2or5zT0Xghk';
+  const DEFAULT_DRIVE_FOLDER_ID = '1VN_d4wvVgWbtr3kzyyygO_XthVFZPXfY';
+  const DEFAULT_DRIVE_FOLDER_URL = 'https://drive.google.com/drive/folders/1VN_d4wvVgWbtr3kzyyygO_XthVFZPXfY?usp=share_link';
+  const AMERICAN_FORK_WEATHER = Object.freeze({
+    lat: 40.3769,
+    lon: -111.7958,
+    label: 'American Fork, UT'
+  });
+
   // ---------- State ----------
   const STATE = {
     photos: [],            // [{ id, blob?, url, caption, location, date, source }]
     activeMode: 3,
-    settings: load('frame-settings', {
+    settings: normalizeSettings(load('frame-settings', {
       mode: 3,
       brightness: 100,
       transitionSec: 0.9,
@@ -1239,19 +1286,22 @@ body {
       corkCount: 5,
       strings: true,
       tape: true,
+      arrangeMode: 'auto',
+      manualSlots: {},
+      lockedSlots: {},
       screenWake: false,
       ghOwner: '',
       ghRepo: '',
       ghPath: 'photos',
       ghBranch: 'main',
       lastSync: 0,
-      gdKey: '',
-      gdFolder: '1VN_d4wvVgWbtr3kzyyygO_XthVFZPXfY',
+      gdKey: DEFAULT_DRIVE_API_KEY,
+      gdFolder: DEFAULT_DRIVE_FOLDER_ID,
       gdAccount: 'runner4evs@gmail.com',
       lastDriveSync: 0,
       primarySource: 'drive', // 'drive' | 'github' | 'local'
-      location: { lat: 35.5951, lon: -82.5515, label: 'Asheville, NC' }
-    }),
+      location: AMERICAN_FORK_WEATHER
+    })),
     rotationIndex: 0,
     cycleTimer: null,
     wakeLock: null,
@@ -1268,6 +1318,20 @@ body {
   }
   function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
   function saveSettings() { save('frame-settings', STATE.settings); }
+  function normalizeSettings(settings) {
+    const s = settings || {};
+    return {
+      ...s,
+      gdKey: DEFAULT_DRIVE_API_KEY,
+      gdFolder: DEFAULT_DRIVE_FOLDER_ID,
+      gdAccount: 'runner4evs@gmail.com',
+      primarySource: 'drive',
+      arrangeMode: s.arrangeMode === 'manual' ? 'manual' : 'auto',
+      manualSlots: s.manualSlots || {},
+      lockedSlots: s.lockedSlots || {},
+      location: { ...AMERICAN_FORK_WEATHER }
+    };
+  }
   function rand(a, b) { return a + Math.random() * (b - a); }
   function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
   function shuffle(arr) {
@@ -1359,8 +1423,8 @@ body {
       try { const est = await navigator.storage.estimate(); bytes = est.usage || 0; } catch {}
     }
     el.textContent = n
-      ? `${n} photo${n===1?'':'s'} cached · ${(bytes/1024/1024).toFixed(1)} MB used`
-      : 'No photos yet — sync from GitHub or load a folder';
+      ? `${n} media item${n===1?'':'s'} cached · ${(bytes/1024/1024).toFixed(1)} MB used`
+      : 'No photos or videos yet — syncing from Google Drive';
   }
 
   // ---------- GitHub sync ----------
@@ -1505,6 +1569,28 @@ body {
     return s; // fallback: use as-is
   }
 
+  function getDriveAspect(file) {
+    const meta = file.imageMediaMetadata || file.videoMediaMetadata || {};
+    const width = Number(meta.width);
+    const height = Number(meta.height);
+    return width > 0 && height > 0 ? width / height : null;
+  }
+
+  function upgradeDriveThumbnail(url) {
+    if (!url) return '';
+    return url.replace(/=s\d+.*$/, '=w2200-h2200');
+  }
+
+  function driveMediaUrls(file, gdKey) {
+    const apiUrl = `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media&key=${encodeURIComponent(gdKey)}`;
+    const downloadUrl = file.webContentLink || `https://drive.google.com/uc?export=download&id=${encodeURIComponent(file.id)}`;
+    const thumbnailUrl = upgradeDriveThumbnail(file.thumbnailLink);
+    if (/^video\//.test(file.mimeType || '')) {
+      return { url: downloadUrl, fallbackUrl: apiUrl, thumbnailUrl };
+    }
+    return { url: thumbnailUrl || downloadUrl, fallbackUrl: apiUrl, thumbnailUrl };
+  }
+
   async function syncFromDrive() {
     if (STATE.syncing) return;
     // Auto-clean the folder ID in case user pasted a full URL
@@ -1518,9 +1604,9 @@ body {
     STATE.syncing = true;
 
     try {
-      // 1) List image files in the folder
-      const q = encodeURIComponent(`'${gdFolder}' in parents and mimeType contains 'image/' and trashed = false`);
-      const fields = encodeURIComponent('files(id,name,mimeType,size,modifiedTime,md5Checksum)');
+      // 1) List media files in the folder
+      const q = encodeURIComponent(`'${gdFolder}' in parents and (mimeType contains 'image/' or mimeType contains 'video/' or name = 'photos.json') and trashed = false`);
+      const fields = encodeURIComponent('files(id,name,mimeType,size,modifiedTime,md5Checksum,thumbnailLink,webContentLink,imageMediaMetadata,videoMediaMetadata)');
       const listUrl =
         `https://www.googleapis.com/drive/v3/files?q=${q}&fields=${fields}&pageSize=1000&supportsAllDrives=true&includeItemsFromAllDrives=true&key=${encodeURIComponent(gdKey)}`;
 
@@ -1530,16 +1616,17 @@ body {
         throw new Error(`Drive ${r.status}: ${body.slice(0, 200) || r.statusText}`);
       }
       const j = await r.json();
-      const files = (j.files || []).filter(f => /^image\//.test(f.mimeType || ''));
-      if (files.length === 0) {
+      const files = j.files || [];
+      const mediaFiles = files.filter(f => /^(image|video)\//.test(f.mimeType || ''));
+      if (mediaFiles.length === 0) {
         setSyncStatus('warn', 'Drive folder is empty');
-        toast('No images found in the Drive folder');
+        toast('No photos or videos found in the Drive folder');
         STATE.syncing = false;
         return;
       }
 
       // Sort by name (so prefixed dates land in order naturally)
-      files.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      mediaFiles.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
       // 2) Try to read optional photos.json metadata from the same folder
       const metaFile = files.find(f => f.name === 'photos.json');
@@ -1559,34 +1646,35 @@ body {
       // 3) Clear previous drive cache
       await dbDeleteBySource('drive');
 
-      // 4) Download each photo into IDB
+      // 4) Cache Drive media records. Public Drive thumbnails/content URLs paint
+      // directly in the browser and avoid blocking startup on large videos.
       let done = 0;
-      for (const f of files) {
+      for (const f of mediaFiles) {
         if (f.name === 'photos.json') continue;
         try {
-          const dl = await fetch(
-            `https://www.googleapis.com/drive/v3/files/${f.id}?alt=media&key=${encodeURIComponent(gdKey)}`
-          );
-          if (!dl.ok) { console.warn('Drive dl failed', f.name, dl.status); continue; }
-          const blob = await dl.blob();
           const m = meta[f.name] || {};
+          const urls = driveMediaUrls(f, gdKey);
           const rec = {
             id: 'gd:' + f.id,
-            blob,
+            url: urls.url,
+            fallbackUrl: urls.fallbackUrl,
+            thumbnailUrl: urls.thumbnailUrl,
             source: 'drive',
+            mimeType: f.mimeType || '',
             file: f.name,
             caption: m.caption || '',
             location: m.location || '',
             date: m.date || (f.modifiedTime || '').slice(0, 10),
             order: typeof m.order === 'number' ? m.order : null,
+            aspect: getDriveAspect(f),
             driveId: f.id,
             sha: f.md5Checksum || ''
           };
           await dbPut(rec);
           done++;
-          setSyncStatus('syncing', `Downloading ${done}/${files.length}…`);
+          setSyncStatus('syncing', `Indexing ${done}/${mediaFiles.length}…`);
         } catch (e) {
-          console.warn('Drive download failed for', f.name, e);
+          console.warn('Drive index skipped for', f.name, e);
         }
       }
 
@@ -1596,7 +1684,7 @@ body {
       renderCorkBoard();
       setSyncStatus('ok', `Synced ${done} from Drive`);
       setTimeout(() => $('#sync-status').classList.remove('visible'), 4000);
-      toast(`Synced ${done} photos from Google Drive`);
+      toast(`Synced ${done} photos/videos from Google Drive`);
       updateDriveStatus();
     } catch (e) {
       console.error(e);
@@ -1648,6 +1736,7 @@ body {
             id: 'local:' + f.name + ':' + f.size + ':' + (f.lastModified || 0),
             blob: f,
             source: 'local',
+            mimeType: f.type || '',
             file: f.name,
             caption: '',
             location: '',
@@ -1737,6 +1826,198 @@ body {
     return presets[Math.max(3, Math.min(9, count))] || presets[5];
   }
 
+  function isVideoPhoto(photo) {
+    return /^video\//.test(photo.mimeType || '') || /\.(mp4|m4v|webm|mov)$/i.test(photo.file || '');
+  }
+
+  function createMediaElement(photo, box, onReady) {
+    const media = isVideoPhoto(photo) ? document.createElement('video') : document.createElement('img');
+    media.className = 'media-item ken-burns';
+    media.src = photo.url;
+    media.alt = photo.caption || '';
+    if (media.tagName === 'VIDEO') {
+      media.muted = true;
+      media.autoplay = true;
+      media.loop = true;
+      media.playsInline = true;
+      media.preload = 'metadata';
+      if (photo.thumbnailUrl) media.poster = photo.thumbnailUrl;
+      media.addEventListener('loadedmetadata', () => {
+        if (media.videoWidth && media.videoHeight) photo.aspect = media.videoWidth / media.videoHeight;
+        markMediaReady(media, photo, box, onReady);
+        media.play().catch(() => {});
+      }, { once: true });
+      media.addEventListener('loadeddata', () => media.classList.add('loaded'), { once: true });
+      media.addEventListener('error', () => {
+        if (photo.thumbnailUrl && media.parentNode) {
+          const fallback = createMediaElement({ ...photo, mimeType: 'image/jpeg', url: photo.thumbnailUrl, fallbackUrl: '' }, box, onReady);
+          media.parentNode.replaceChild(fallback, media);
+        } else if (box) {
+          box.style.display = 'none';
+        }
+      }, { once: true });
+    } else {
+      media.onload = () => {
+        if (media.naturalWidth && media.naturalHeight) photo.aspect = media.naturalWidth / media.naturalHeight;
+        markMediaReady(media, photo, box, onReady);
+      };
+      media.onerror = () => {
+        if (photo.fallbackUrl && media.src !== photo.fallbackUrl) {
+          media.src = photo.fallbackUrl;
+        } else if (box) {
+          box.style.display = 'none';
+        }
+      };
+    }
+    return media;
+  }
+
+  function markMediaReady(media, photo, box, onReady) {
+    media.classList.add('loaded');
+    if (box && STATE.activeMode === 3) {
+      box._slot = currentSlotForBox(+box.dataset.slotIdx, box._baseSlot, photo.aspect);
+      applySlotToBox(box, box._slot);
+    }
+    onReady && onReady(media);
+  }
+
+  function currentSlotForBox(idx, slot, aspect) {
+    const manual = STATE.settings.arrangeMode === 'manual' ? STATE.settings.manualSlots[idx] : null;
+    const fitted = fitSlotToAspect(slot, aspect || slot.aspect || 1);
+    return manual ? { ...fitted, ...manual, rot: manual.rot ?? fitted.rot } : fitted;
+  }
+
+  function fitSlotToAspect(slot, aspect) {
+    const vw = window.innerWidth || 2800;
+    const vh = window.innerHeight || 1752;
+    const safeAspect = Math.max(0.42, Math.min(2.6, Number(aspect) || 1));
+    const baseW = (slot.w / 100) * vw;
+    const baseH = (slot.h / 100) * vh;
+    const area = Math.max(baseW * baseH, vw * vh * 0.018);
+    let pxW = Math.sqrt(area * safeAspect);
+    let pxH = pxW / safeAspect;
+    const maxW = vw * (safeAspect > 1.55 ? 0.30 : 0.24);
+    const maxH = vh * (safeAspect < 0.78 ? 0.43 : 0.36);
+    const minW = vw * 0.11;
+    const minH = vh * 0.15;
+    const scaleDown = Math.min(1, maxW / pxW, maxH / pxH);
+    pxW *= scaleDown;
+    pxH *= scaleDown;
+    const scaleUp = Math.max(1, minW / pxW, minH / pxH);
+    pxW *= scaleUp;
+    pxH *= scaleUp;
+    const w = (pxW / vw) * 100;
+    const h = (pxH / vh) * 100;
+    return {
+      ...slot,
+      w,
+      h,
+      x: clamp(slot.x, w / 2 + 2, 98 - w / 2),
+      y: clamp(slot.y, h / 2 + 4, 70 - h / 2)
+    };
+  }
+
+  function clamp(n, min, max) {
+    return Math.max(min, Math.min(max, n));
+  }
+
+  function applySlotToBox(box, slot) {
+    box.style.left = slot.x + '%';
+    box.style.top = slot.y + '%';
+    box.style.width = slot.w + 'vw';
+    box.style.height = slot.h + 'vh';
+    box.style.transform = `translate(-50%, -50%) rotate(${slot.rot || 0}deg)`;
+  }
+
+  function isSlotLocked(idx) {
+    return Boolean((STATE.settings.lockedSlots || {})[idx]);
+  }
+
+  function isBoxLocked(box) {
+    return isSlotLocked(+box.dataset.slotIdx);
+  }
+
+  function toggleSlotLock(box) {
+    const idx = +box.dataset.slotIdx;
+    const locks = STATE.settings.lockedSlots || {};
+    if (locks[idx]) {
+      delete locks[idx];
+      box.classList.remove('locked');
+      toast('Polaroid unlocked');
+    } else {
+      locks[idx] = box.dataset.photoId;
+      box.classList.add('locked');
+      toast('Polaroid locked');
+    }
+    STATE.settings.lockedSlots = locks;
+    saveSettings();
+  }
+
+  function bindPhotoInteractions(box) {
+    const media = box.querySelector('.media-container');
+    let startX = 0, startY = 0, startLeft = 0, startTop = 0;
+    let dragging = false, longPressed = false, longTimer = null;
+
+    media.addEventListener('pointerdown', (e) => {
+      if (STATE.activeMode !== 3) return;
+      startX = e.clientX;
+      startY = e.clientY;
+      startLeft = parseFloat(box.style.left) || 50;
+      startTop = parseFloat(box.style.top) || 30;
+      dragging = false;
+      longPressed = false;
+      media.setPointerCapture(e.pointerId);
+      longTimer = setTimeout(() => {
+        longPressed = true;
+        toggleSlotLock(box);
+      }, 650);
+    });
+
+    media.addEventListener('pointermove', (e) => {
+      if (!longTimer && !dragging) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      if (Math.hypot(dx, dy) > 7 && STATE.settings.arrangeMode === 'manual' && !longPressed) {
+        dragging = true;
+        clearTimeout(longTimer);
+        longTimer = null;
+        box.classList.add('dragging');
+      }
+      if (!dragging) return;
+      const nextSlot = {
+        ...(box._slot || box._baseSlot),
+        x: clamp(startLeft + (dx / window.innerWidth) * 100, 4, 96),
+        y: clamp(startTop + (dy / window.innerHeight) * 100, 6, 70)
+      };
+      box._slot = nextSlot;
+      applySlotToBox(box, nextSlot);
+    });
+
+    const endPointer = (e) => {
+      clearTimeout(longTimer);
+      longTimer = null;
+      try { media.releasePointerCapture(e.pointerId); } catch {}
+      if (dragging) {
+        const idx = +box.dataset.slotIdx;
+        STATE.settings.manualSlots[idx] = {
+          x: parseFloat(box.style.left),
+          y: parseFloat(box.style.top),
+          w: parseFloat(box.style.width),
+          h: parseFloat(box.style.height),
+          rot: box._slot?.rot || box._baseSlot?.rot || 0
+        };
+        saveSettings();
+        drawStrings($$('.img-box', $('#photo-wrapper')).map(b => b._slot).filter(Boolean));
+        box.classList.remove('dragging');
+      } else if (!longPressed) {
+        changePhotoInBox(box);
+      }
+      dragging = false;
+    };
+    media.addEventListener('pointerup', endPointer);
+    media.addEventListener('pointercancel', endPointer);
+  }
+
   function renderCorkBoard() {
     const wrapper = $('#photo-wrapper');
     wrapper.innerHTML = '';
@@ -1745,44 +2026,66 @@ body {
 
     const slots = generateCorkSlots(STATE.settings.corkCount);
     const photos = pickPhotosForBoard(slots.length);
+    const stringSlots = [];
 
     slots.forEach((slot, i) => {
       const photo = photos[i];
       if (!photo) return;
       const box = createPhotoBox(photo, slot, i);
       wrapper.appendChild(box);
+      stringSlots.push(box._slot);
     });
 
-    drawStrings(slots);
+    drawStrings(stringSlots);
     if (STATE.cycleTimer) { clearInterval(STATE.cycleTimer); }
     STATE.cycleTimer = setInterval(rotateOnePhoto, STATE.settings.cycleSec * 1000);
   }
 
   function pickPhotosForBoard(n) {
     if (STATE.photos.length === 0) return [];
+    const picked = Array(n).fill(null);
+    const used = new Set();
+    const locks = STATE.settings.lockedSlots || {};
+    for (let i = 0; i < n; i++) {
+      const lockedId = locks[i];
+      const lockedPhoto = STATE.photos.find(p => p.id === lockedId);
+      if (lockedPhoto) {
+        picked[i] = lockedPhoto;
+        used.add(lockedPhoto.id);
+      }
+    }
     // Prefer photos.json order if all photos have order field, else shuffle
     const ordered = STATE.photos.slice().sort((a,b) => {
       if (a.order != null && b.order != null) return a.order - b.order;
       return 0;
     });
-    const shuffled = shuffle(ordered);
-    return shuffled.slice(0, n);
+    const shuffled = shuffle(ordered).filter(p => !used.has(p.id));
+    for (let i = 0; i < n; i++) {
+      if (!picked[i]) picked[i] = shuffled.shift() || STATE.photos[i % STATE.photos.length];
+    }
+    return picked;
   }
 
   function createPhotoBox(photo, slot, idx) {
     const box = document.createElement('div');
     box.className = 'img-box style-' + slot.style;
-    box.style.left   = slot.x + '%';
-    box.style.top    = slot.y + '%';
-    box.style.width  = slot.w + 'vw';
-    box.style.height = slot.h + 'vh';
-    box.style.transform = `translate(-50%, -50%) rotate(${slot.rot}deg)`;
     box.dataset.slotIdx = idx;
+    box.dataset.photoId = photo.id;
+    box._baseSlot = { ...slot };
+    box._slot = currentSlotForBox(idx, slot, photo.aspect);
+    box.classList.toggle('manual-arrange', STATE.settings.arrangeMode === 'manual');
+    box.classList.toggle('locked', isSlotLocked(idx));
+    applySlotToBox(box, box._slot);
 
     // Pin
     const pin = document.createElement('div');
     pin.className = 'pin-handle ' + pick(PIN_COLORS);
     box.appendChild(pin);
+
+    const lock = document.createElement('div');
+    lock.className = 'lock-badge material-symbols-rounded';
+    lock.textContent = 'lock';
+    box.appendChild(lock);
 
     // Optional washi tape
     if (slot.tape && STATE.settings.tape) {
@@ -1808,13 +2111,7 @@ body {
     // Media container
     const media = document.createElement('div');
     media.className = 'media-container';
-    const img = document.createElement('img');
-    img.className = 'media-item ken-burns';
-    img.src = photo.url;
-    img.alt = photo.caption || '';
-    img.onload = () => img.classList.add('loaded');
-    img.onerror = () => { box.style.display = 'none'; };
-    media.appendChild(img);
+    media.appendChild(createMediaElement(photo, box));
     box.appendChild(media);
 
     // Caption
@@ -1825,6 +2122,7 @@ body {
       box.appendChild(cap);
     }
 
+    bindPhotoInteractions(box);
     return box;
   }
 
@@ -1837,11 +2135,7 @@ body {
     box.className = 'img-box';
     const media = document.createElement('div');
     media.className = 'media-container';
-    const img = document.createElement('img');
-    img.className = 'media-item ken-burns';
-    img.src = photo.url;
-    img.onload = () => img.classList.add('loaded');
-    media.appendChild(img);
+    media.appendChild(createMediaElement(photo, box));
     box.appendChild(media);
     wrapper.appendChild(box);
 
@@ -1861,7 +2155,7 @@ body {
                   font-family:'Caveat',cursive;font-size:1.6rem;color:#5a3a18;
                   text-align:center;max-width:60%;rotate:-1.5deg">
         <div style="font-family:'Permanent Marker',cursive;font-size:1.6rem;margin-bottom:8px;color:#3a2010">No photos yet!</div>
-        <div>Tap the gear → "Sync from GitHub" or "Load Folder"</div>
+        <div>Syncing from Google Drive, or tap the gear → "Sync from Drive"</div>
       </div>`;
   }
 
@@ -1869,33 +2163,38 @@ body {
     if (STATE.activeMode !== 3) return;
     if (STATE.photos.length < 2) return;
     const wrapper = $('#photo-wrapper');
-    const boxes = $$('.img-box', wrapper);
+    const boxes = $$('.img-box', wrapper).filter(b => !isBoxLocked(b));
     if (boxes.length === 0) return;
     const targetBox = boxes[STATE.rotationIndex % boxes.length];
     STATE.rotationIndex++;
+    changePhotoInBox(targetBox);
+  }
 
+  function changePhotoInBox(targetBox, preferredPhoto=null) {
+    if (!targetBox || isBoxLocked(targetBox)) {
+      if (targetBox) toast('Long press to unlock this Polaroid first');
+      return;
+    }
     // Pick a photo not currently shown
-    const shown = boxes.map(b => b.querySelector('img').src);
-    const candidates = STATE.photos.filter(p => !shown.includes(p.url));
+    const shown = $$('.img-box', $('#photo-wrapper')).map(b => b.dataset.photoId);
+    const candidates = preferredPhoto ? [preferredPhoto] : STATE.photos.filter(p => !shown.includes(p.id));
     if (candidates.length === 0) return;
     const next = pick(candidates);
 
     // Crossfade swap
-    const oldImg = targetBox.querySelector('img.media-item');
-    const newImg = document.createElement('img');
-    newImg.className = 'media-item ken-burns';
-    newImg.src = next.url;
-    newImg.style.position = 'absolute';
-    newImg.style.top = '0'; newImg.style.left = '0';
-    newImg.style.width = '100%'; newImg.style.height = '100%';
-    newImg.onload = () => {
-      newImg.classList.add('loaded');
-      oldImg.classList.add('fading-out');
+    const mediaContainer = targetBox.querySelector('.media-container');
+    const oldItems = $$('.media-item', mediaContainer);
+    const newMedia = createMediaElement(next, targetBox, () => {
+      oldItems.forEach(el => el.classList.add('fading-out'));
       setTimeout(() => {
-        if (oldImg.parentNode) oldImg.parentNode.removeChild(oldImg);
+        oldItems.forEach(el => el.parentNode && el.parentNode.removeChild(el));
       }, 1200);
-    };
-    targetBox.querySelector('.media-container').appendChild(newImg);
+    });
+    newMedia.style.position = 'absolute';
+    newMedia.style.top = '0';
+    newMedia.style.left = '0';
+    mediaContainer.appendChild(newMedia);
+    targetBox.dataset.photoId = next.id;
 
     // Update caption if any
     const cap = targetBox.querySelector('.photo-caption');
@@ -1974,7 +2273,8 @@ body {
     95: 'Thunderstorm', 96: 'Thunderstorm', 99: 'Severe thunder'
   };
   async function updateWeather() {
-    const { lat, lon, label } = STATE.settings.location;
+    STATE.settings.location = { ...AMERICAN_FORK_WEATHER };
+    const { lat, lon, label } = AMERICAN_FORK_WEATHER;
     try {
       const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto`;
       const r = await fetch(url);
@@ -2059,7 +2359,7 @@ body {
     $('#open-drive-folder').addEventListener('click', (e) => {
       e.preventDefault();
       const id = STATE.settings.gdFolder;
-      if (id) window.open(`https://drive.google.com/drive/folders/${id}`, '_blank');
+      if (id) window.open(DEFAULT_DRIVE_FOLDER_URL, '_blank');
       else toast('Set a folder ID first');
     });
 
@@ -2093,24 +2393,22 @@ body {
     // Toggle buttons
     bindToggle('#btn-strings', 'strings', () => drawStrings(generateCorkSlots(STATE.settings.corkCount)));
     bindToggle('#btn-tape', 'tape', () => renderCorkBoard());
+    $('#btn-arrange').addEventListener('click', () => {
+      STATE.settings.arrangeMode = STATE.settings.arrangeMode === 'manual' ? 'auto' : 'manual';
+      if (STATE.settings.arrangeMode === 'auto') STATE.settings.manualSlots = {};
+      saveSettings();
+      paintArrange();
+      renderCorkBoard();
+    });
     bindToggle('#btn-screen-wake', 'screenWake', () => updateWakeLock());
 
     // Location
-    $('#loc-input').value = STATE.settings.location.label;
-    $('#btn-loc-set').addEventListener('click', async () => {
-      const q = $('#loc-input').value.trim();
-      if (!q) return;
-      $('#loc-status').textContent = 'looking up…';
-      try {
-        const loc = await geocode(q);
-        if (!loc) { $('#loc-status').textContent = 'not found'; return; }
-        STATE.settings.location = loc;
-        saveSettings();
-        $('#loc-status').textContent = `set to ${loc.label}`;
-        updateWeather();
-      } catch (e) {
-        $('#loc-status').textContent = 'lookup failed';
-      }
+    $('#loc-input').value = AMERICAN_FORK_WEATHER.label;
+    $('#btn-loc-set').addEventListener('click', () => {
+      STATE.settings.location = { ...AMERICAN_FORK_WEATHER };
+      saveSettings();
+      $('#loc-status').textContent = 'Always showing American Fork, Utah.';
+      updateWeather();
     });
 
     // Map button
@@ -2142,6 +2440,7 @@ body {
     document.documentElement.style.setProperty('--transition-photos', STATE.settings.transitionSec + 's');
     paintToggle('#btn-strings', STATE.settings.strings);
     paintToggle('#btn-tape', STATE.settings.tape);
+    paintArrange();
     paintToggle('#btn-screen-wake', STATE.settings.screenWake);
     paintMode();
     updateGitHubStatus();
@@ -2177,6 +2476,14 @@ body {
     b.classList.toggle('btn-active', on);
     const tag = b.querySelector('.btn-tag');
     if (tag) tag.textContent = on ? 'ON' : 'OFF';
+  }
+  function paintArrange() {
+    const b = $('#btn-arrange');
+    const manual = STATE.settings.arrangeMode === 'manual';
+    b.classList.toggle('btn-active', manual);
+    b.firstChild.textContent = manual ? 'Auto Arrange Photos ' : 'Manual Move Photos ';
+    const tag = b.querySelector('.btn-tag');
+    if (tag) tag.textContent = manual ? 'ON' : 'OFF';
   }
   function paintMode() {
     $('#btn-mode-3').classList.toggle('btn-active', STATE.activeMode === 3);
@@ -2237,9 +2544,6 @@ body {
     if (STATE.settings.gdKey && STATE.settings.gdFolder) {
       const stale = Date.now() - (STATE.settings.lastDriveSync || 0) > 1000 * 60 * 60;
       if (empty || stale) syncFromDrive();
-    } else if (STATE.settings.ghOwner && STATE.settings.ghRepo) {
-      const stale = Date.now() - (STATE.settings.lastSync || 0) > 1000 * 60 * 60;
-      if (empty && stale) syncFromGitHub();
     }
 
     updateWeather();
