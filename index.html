@@ -1,2265 +1,2066 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="theme-color" content="#000000" />
-    <title>Adam's Multimedia Frame</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Kalam:wght@300;400;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,1,0" />
-
-    <style>
-        :root {
-            --accent: #6366f1;
-            --accent-glow: rgba(99, 102, 241, 0.25);
-            --sticky-cream: #fefce8;
-            --sticky-rose: #fce7f3;
-            --sticky-sky: #e0f2fe;
-            --sticky-mint: #ecfdf5;
-            --panel-bg: #0a0a0f;
-            --panel-card: #16161f;
-            --panel-border: #1e1e2e;
-            --panel-text: #e4e4e7;
-            --panel-muted: #71717a;
-            --transition-photos: 0.9s;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            background: #000;
-            overflow: hidden;
-            font-family: 'DM Sans', sans-serif;
-            color: #1f2937;
-            user-select: none;
-            -webkit-user-select: none;
-            overscroll-behavior: none;
-            transition: filter 0.8s ease;
-        }
-
-        #container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-            background: #000;
-            transform-origin: center center;
-        }
-
-        /* ============================
-       PHOTO LAYER
-    ============================ */
-        #photo-wrapper {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            transition: background-color 0.6s;
-        }
-
-        .img-box {
-            position: absolute;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            align-items: center;
-            touch-action: none;
-            overflow: visible;
-            transition: left 0.7s cubic-bezier(0.34, 1.56, 0.64, 1),
-                top 0.7s cubic-bezier(0.34, 1.56, 0.64, 1),
-                width 0.7s cubic-bezier(0.34, 1.56, 0.64, 1),
-                height 0.7s cubic-bezier(0.34, 1.56, 0.64, 1),
-                transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1),
-                opacity 0.5s;
-        }
-
-        .img-box.dragging {
-            transition: none !important;
-        }
-
-        /* --- MODE 1: Single fullscreen --- */
-        .mode-1 .img-box {
-            width: 100% !important;
-            height: 100% !important;
-            top: 0 !important;
-            left: 0 !important;
-            transform: none !important;
-            border: none !important;
-            padding: 0 !important;
-            background: #000;
-        }
-
-        .mode-1 .pin-handle,
-        .mode-1 .resize-handle {
-            display: none !important;
-        }
-
-        /* --- MODE 3: Realistic Corkboard --- */
-        .mode-3 {
-            background-color: #a0845c;
-            background-image:
-                /* Warm highlight top-left */
-                radial-gradient(ellipse at 10% 15%, rgba(210, 185, 145, 0.5) 0%, transparent 45%),
-                /* Dark shadow bottom-right */
-                radial-gradient(ellipse at 90% 90%, rgba(60, 40, 20, 0.3) 0%, transparent 45%),
-                /* Center warmth */
-                radial-gradient(ellipse at 50% 45%, rgba(180, 155, 110, 0.2) 0%, transparent 60%),
-                /* Cork pore layer 1 - tiny dark spots scattered */
-                radial-gradient(circle at 12% 8%, rgba(70, 50, 25, 0.25) 0.5px, transparent 1.2px),
-                radial-gradient(circle at 35% 22%, rgba(80, 55, 30, 0.2) 0.8px, transparent 1.5px),
-                radial-gradient(circle at 58% 15%, rgba(65, 45, 20, 0.22) 0.6px, transparent 1.3px),
-                radial-gradient(circle at 82% 28%, rgba(75, 50, 25, 0.2) 0.7px, transparent 1.4px),
-                radial-gradient(circle at 20% 42%, rgba(85, 60, 30, 0.18) 0.5px, transparent 1.2px),
-                radial-gradient(circle at 45% 38%, rgba(70, 48, 22, 0.22) 0.8px, transparent 1.5px),
-                radial-gradient(circle at 68% 45%, rgba(60, 40, 20, 0.2) 0.6px, transparent 1.3px),
-                radial-gradient(circle at 92% 52%, rgba(80, 55, 28, 0.18) 0.7px, transparent 1.4px),
-                radial-gradient(circle at 8% 62%, rgba(75, 52, 25, 0.22) 0.5px, transparent 1.1px),
-                radial-gradient(circle at 30% 58%, rgba(65, 45, 20, 0.2) 0.8px, transparent 1.5px),
-                radial-gradient(circle at 55% 68%, rgba(85, 60, 30, 0.18) 0.6px, transparent 1.2px),
-                radial-gradient(circle at 78% 72%, rgba(70, 48, 22, 0.22) 0.7px, transparent 1.4px),
-                radial-gradient(circle at 15% 82%, rgba(80, 55, 28, 0.2) 0.5px, transparent 1.2px),
-                radial-gradient(circle at 42% 78%, rgba(60, 40, 18, 0.22) 0.8px, transparent 1.5px),
-                radial-gradient(circle at 65% 88%, rgba(75, 52, 25, 0.18) 0.6px, transparent 1.3px),
-                radial-gradient(circle at 88% 85%, rgba(85, 58, 30, 0.2) 0.7px, transparent 1.4px),
-                /* Cork pore layer 2 — lighter tan spots (lighter fibers) */
-                radial-gradient(circle at 22% 18%, rgba(200, 175, 130, 0.25) 1px, transparent 2.5px),
-                radial-gradient(circle at 48% 32%, rgba(195, 170, 125, 0.2) 1.2px, transparent 3px),
-                radial-gradient(circle at 72% 22%, rgba(210, 180, 135, 0.22) 1px, transparent 2.8px),
-                radial-gradient(circle at 18% 55%, rgba(200, 172, 128, 0.2) 1.3px, transparent 3px),
-                radial-gradient(circle at 52% 62%, rgba(190, 165, 120, 0.22) 1px, transparent 2.5px),
-                radial-gradient(circle at 85% 48%, rgba(205, 178, 132, 0.18) 1.2px, transparent 3px),
-                radial-gradient(circle at 38% 82%, rgba(195, 168, 122, 0.22) 1px, transparent 2.8px),
-                radial-gradient(circle at 75% 78%, rgba(210, 182, 138, 0.2) 1.3px, transparent 3px),
-                /* Large tonal variation patches */
-                radial-gradient(ellipse at 25% 35%, rgba(120, 90, 55, 0.12) 0%, transparent 25%),
-                radial-gradient(ellipse at 70% 60%, rgba(140, 110, 70, 0.1) 0%, transparent 30%),
-                radial-gradient(ellipse at 50% 80%, rgba(110, 85, 50, 0.08) 0%, transparent 20%),
-                radial-gradient(ellipse at 80% 20%, rgba(130, 100, 65, 0.1) 0%, transparent 22%);
-            /* Wood frame edge */
-            box-shadow:
-                inset 0 0 0 5px rgba(55, 35, 15, 0.35),
-                inset 0 0 0 6px rgba(120, 90, 50, 0.15),
-                inset 0 0 25px rgba(50, 30, 10, 0.12);
-        }
-
-        .mode-3 .img-box {
-            background: linear-gradient(160deg, #fffffe 0%, #faf9f5 30%, #f5f3ed 100%);
-            padding: 10px 10px 42px 10px;
-            box-shadow:
-                0 1px 2px rgba(0, 0, 0, 0.06),
-                0 2px 4px rgba(0, 0, 0, 0.06),
-                1px 4px 10px rgba(0, 0, 0, 0.1),
-                3px 8px 20px rgba(0, 0, 0, 0.13),
-                6px 16px 40px rgba(0, 0, 0, 0.1),
-                0 0 0 0.5px rgba(0, 0, 0, 0.03);
-            border-radius: 1px;
-        }
-
-        /* Paper grain texture overlay on polaroid */
-        .mode-3 .img-box::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background-image:
-                radial-gradient(circle at 20% 20%, rgba(0, 0, 0, 0.008) 1px, transparent 1px),
-                radial-gradient(circle at 80% 30%, rgba(0, 0, 0, 0.006) 1px, transparent 1px),
-                radial-gradient(circle at 40% 70%, rgba(0, 0, 0, 0.008) 1px, transparent 1px),
-                radial-gradient(circle at 60% 90%, rgba(0, 0, 0, 0.005) 1px, transparent 1px);
-            background-size: 6px 6px, 8px 8px, 7px 7px, 5px 5px;
-            pointer-events: none;
-            z-index: 1;
-            border-radius: 1px;
-        }
-
-        .mode-3 .media-container {
-            border-radius: 1px;
-            overflow: hidden;
-        }
-
-        /* Pins */
-        .pin-handle {
-            position: absolute;
-            top: -11px;
-            left: 50%;
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            transform: translateX(-50%);
-            z-index: 50;
-            cursor: move;
-            box-shadow:
-                inset -3px -3px 5px rgba(0, 0, 0, 0.3),
-                inset 2px 2px 4px rgba(255, 255, 255, 0.5),
-                1px 3px 6px rgba(0, 0, 0, 0.4),
-                0 8px 3px -4px rgba(0, 0, 0, 0.15);
-            border: none;
-            display: none;
-        }
-
-        /* Specular highlight on pin */
-        .pin-handle::before {
-            content: '';
-            position: absolute;
-            top: 3px;
-            left: 5px;
-            width: 5px;
-            height: 4px;
-            border-radius: 50%;
-            background: radial-gradient(ellipse, rgba(255, 255, 255, 0.7) 0%, transparent 70%);
-            pointer-events: none;
-            z-index: 1;
-        }
-
-        /* Spike shadow beneath pin */
-        .pin-handle::after {
-            content: '';
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 3px;
-            height: 8px;
-            background: linear-gradient(to bottom, rgba(100, 100, 100, 0.5), transparent);
-            border-radius: 0 0 1px 1px;
-        }
-
-        .mode-3 .pin-handle {
-            display: block;
-        }
-
-        .pin-red {
-            background: linear-gradient(135deg, #f87171, #dc2626);
-        }
-
-        .pin-blue {
-            background: linear-gradient(135deg, #60a5fa, #2563eb);
-        }
-
-        .pin-green {
-            background: linear-gradient(135deg, #34d399, #059669);
-        }
-
-        .pin-yellow {
-            background: linear-gradient(135deg, #fbbf24, #d97706);
-        }
-
-        .pin-purple {
-            background: linear-gradient(135deg, #a78bfa, #7c3aed);
-        }
-
-        .pin-white {
-            background: linear-gradient(135deg, #f5f5f4, #d6d3d1);
-        }
-
-        .resize-handle {
-            position: absolute;
-            bottom: -4px;
-            right: -4px;
-            width: 28px;
-            height: 28px;
-            cursor: nwse-resize;
-            display: none;
-            z-index: 40;
-            border-radius: 0 0 4px 0;
-        }
-
-        .resize-handle::after {
-            content: '';
-            position: absolute;
-            bottom: 6px;
-            right: 6px;
-            width: 10px;
-            height: 10px;
-            border-right: 2px solid rgba(0, 0, 0, 0.2);
-            border-bottom: 2px solid rgba(0, 0, 0, 0.2);
-        }
-
-        .mode-3 .resize-handle {
-            display: block;
-        }
-
-        .media-container {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            position: relative;
-            pointer-events: auto;
-            cursor: pointer;
-        }
-
-        .mode-1 .media-container {
-            cursor: default;
-        }
-
-        .media-item {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            opacity: 0;
-            transform: scale(1.015);
-            transition: opacity var(--transition-photos) ease,
-                transform calc(var(--transition-photos) * 1.5) ease-out;
-            pointer-events: none;
-            display: block;
-        }
-
-        .media-item.loaded {
-            opacity: 1;
-            transform: scale(1);
-        }
-
-        .mode-3 .media-item {
-            object-fit: cover;
-        }
-
-        /* Crossfade: old image stays behind new one */
-        .media-container .media-item.fading-out {
-            position: absolute;
-            top: 0;
-            left: 0;
-            opacity: 0;
-            transform: scale(1);
-            transition: opacity var(--transition-photos) ease;
-        }
-
-        /* Ken Burns */
-        .ken-burns {
-            animation: kb 22s infinite alternate ease-in-out;
-        }
-
-        @keyframes kb {
-            0% {
-                transform: scale(1.0) translate(0, 0);
-            }
-
-            100% {
-                transform: scale(1.12) translate(-1%, -1%);
-            }
-        }
-
-        /* Photo caption area in polaroid bottom */
-        .photo-caption {
-            position: absolute;
-            bottom: 8px;
-            left: 12px;
-            right: 12px;
-            height: 28px;
-            font-family: 'Kalam', cursive;
-            font-size: 0.75rem;
-            color: #999;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-        }
-
-        .mode-3 .photo-caption {
-            display: flex;
-        }
-
-        /* ============================
-       OVERLAY UI
-    ============================ */
-        #overlay {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 100;
-        }
-
-        #sticky-container {
-            position: absolute;
-            bottom: 12px;
-            left: 0;
-            width: 100%;
-            padding: 0 16px;
-            box-sizing: border-box;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            gap: 12px;
-            pointer-events: none;
-            transition: opacity 0.4s, transform 0.4s;
-        }
-
-        #sticky-container.hidden {
-            opacity: 0;
-            transform: translateY(20px);
-            pointer-events: none;
-        }
-
-        .sticky-note {
-            position: relative;
-            padding: 18px 22px;
-            pointer-events: auto;
-            cursor: pointer;
-            font-family: 'Kalam', cursive;
-            color: #2a2a2a;
-            transform-origin: center bottom;
-            transition: transform 0.2s;
-            /* 3D depth: layered shadows for lifted paper effect */
-            box-shadow:
-                0 1px 1px rgba(0, 0, 0, 0.08),
-                0 3px 6px rgba(0, 0, 0, 0.1),
-                0 8px 16px rgba(0, 0, 0, 0.12),
-                0 16px 32px rgba(0, 0, 0, 0.08),
-                3px 4px 8px rgba(0, 0, 0, 0.06);
-            /* Slight paper texture gradient */
-            background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, transparent 40%, transparent 60%, rgba(0, 0, 0, 0.02) 100%);
-            background-blend-mode: overlay;
-        }
-
-        .sticky-note::before {
-            /* Folded corner effect */
-            content: '';
-            position: absolute;
-            bottom: 0;
-            right: 0;
-            width: 20px;
-            height: 20px;
-            background: linear-gradient(225deg, rgba(0, 0, 0, 0.06) 0%, rgba(0, 0, 0, 0.02) 45%, transparent 50%);
-            pointer-events: none;
-        }
-
-        .sticky-note::after {
-            /* Subtle adhesive strip shadow at top */
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 15%;
-            right: 15%;
-            height: 3px;
-            background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.04), transparent);
-            pointer-events: none;
-        }
-
-        .sticky-note:active {
-            transform: scale(0.97) !important;
-        }
-
-        .widget-pin {
-            position: absolute;
-            top: -9px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            box-shadow:
-                inset -2px -2px 3px rgba(0, 0, 0, 0.3),
-                inset 1px 1px 2px rgba(255, 255, 255, 0.4),
-                1px 2px 4px rgba(0, 0, 0, 0.4),
-                0 0 0 1px rgba(0, 0, 0, 0.05);
-            z-index: 60;
-            border: none;
-        }
-
-        .wp-red {
-            background: linear-gradient(135deg, #fca5a5, #dc2626);
-        }
-
-        .wp-green {
-            background: linear-gradient(135deg, #6ee7b7, #059669);
-        }
-
-        .wp-blue {
-            background: linear-gradient(135deg, #93c5fd, #2563eb);
-        }
-
-        /* Time Widget */
-        #time-widget {
-            background: #fefce8;
-            background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0%, transparent 40%, transparent 60%, rgba(0, 0, 0, 0.02) 100%);
-            transform: rotate(-1.8deg);
-            text-align: center;
-            min-width: 170px;
-        }
-
-        #time-display {
-            font-size: 3.6rem;
-            font-weight: 700;
-            line-height: 1;
-            color: #1a1a1a;
-            letter-spacing: -1px;
-            font-family: 'Kalam', cursive;
-        }
-
-        #ampm {
-            font-size: 1rem;
-            font-weight: 400;
-            color: #777;
-            margin-left: 3px;
-            font-family: 'Kalam', cursive;
-        }
-
-        #date-line {
-            font-size: 1rem;
-            color: #555;
-            margin-top: 6px;
-            font-family: 'Kalam', cursive;
-            font-weight: 400;
-        }
-
-        /* Agenda Widget */
-        #agenda-box {
-            background: #fce7f3;
-            background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0%, transparent 40%, transparent 60%, rgba(0, 0, 0, 0.02) 100%);
-            transform: rotate(1.2deg);
-            display: flex;
-            gap: 18px;
-            text-align: center;
-        }
-
-        .day-col {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-        }
-
-        .day-label {
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            color: #888;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            font-family: 'Kalam', cursive;
-        }
-
-        .day-date {
-            font-size: 2.2rem;
-            font-weight: 700;
-            line-height: 1;
-            color: #2a2a2a;
-            font-family: 'Kalam', cursive;
-        }
-
-        .day-sub {
-            font-size: 0.85rem;
-            color: #777;
-            font-family: 'Kalam', cursive;
-        }
-
-        .day-divider {
-            width: 1px;
-            background: rgba(0, 0, 0, 0.12);
-            align-self: stretch;
-            margin: 4px 0;
-        }
-
-        /* Weather Widget — expanded to absorb ticker data */
-        #weather-box {
-            background: #e0f2fe;
-            background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0%, transparent 40%, transparent 60%, rgba(0, 0, 0, 0.02) 100%);
-            transform: rotate(-0.8deg);
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            min-width: 210px;
-            text-align: right;
-        }
-
-        #weather-main {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        #weather-icon {
-            font-size: 36px;
-            color: #0369a1;
-        }
-
-        #temp {
-            font-size: 3.2rem;
-            font-weight: 700;
-            line-height: 1;
-            color: #1a1a1a;
-            font-family: 'Kalam', cursive;
-        }
-
-        #condition {
-            font-size: 1.05rem;
-            font-weight: 600;
-            text-transform: capitalize;
-            color: #3a3a3a;
-            font-family: 'Kalam', cursive;
-        }
-
-        #weather-details {
-            font-size: 0.85rem;
-            color: #555;
-            margin-top: 5px;
-            font-family: 'Kalam', cursive;
-            line-height: 1.45;
-            text-align: right;
-        }
-
-        #weather-tomorrow {
-            font-size: 0.8rem;
-            color: #666;
-            margin-top: 4px;
-            font-family: 'Kalam', cursive;
-            line-height: 1.3;
-            text-align: right;
-            border-top: 1px dashed rgba(0, 0, 0, 0.12);
-            padding-top: 4px;
-        }
-
-        /* Ticker tape removed — weather info condensed into sticky */
-
-        /* Photo counter removed */
-
-        /* ============================
-       SETTINGS PANEL
-    ============================ */
-        #settings-btn {
-            position: absolute;
-            top: 24px;
-            right: 24px;
-            z-index: 300;
-            width: 44px;
-            height: 44px;
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            color: rgba(255, 255, 255, 0.75);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            cursor: pointer;
-            pointer-events: auto;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 0 0.5px rgba(255, 255, 255, 0.05);
-            transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
-        }
-
-        #settings-btn:hover {
-            background: rgba(0, 0, 0, 0.5);
-        }
-
-        #settings-btn:active {
-            transform: scale(0.9);
-        }
-
-        #settings-btn .material-symbols-rounded {
-            transition: transform 0.4s;
-        }
-
-        #settings-btn.active .material-symbols-rounded {
-            transform: rotate(90deg);
-        }
-
-        #settings-panel {
-            position: absolute;
-            top: 0;
-            right: -380px;
-            width: 360px;
-            height: 100%;
-            background: var(--panel-bg);
-            color: var(--panel-text);
-            z-index: 280;
-            transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-            padding: 0;
-            box-sizing: border-box;
-            border-left: 1px solid var(--panel-border);
-            overflow-y: auto;
-            overflow-x: hidden;
-            scrollbar-width: thin;
-            scrollbar-color: #333 transparent;
-        }
-
-        #settings-panel.open {
-            right: 0;
-        }
-
-        .settings-header {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 24px;
-            background: var(--panel-bg);
-            border-bottom: 1px solid var(--panel-border);
-        }
-
-        .settings-title {
-            font-family: 'Permanent Marker', cursive;
-            font-size: 1.3rem;
-            color: #fff;
-        }
-
-        .close-settings {
-            cursor: pointer;
-            width: 34px;
-            height: 34px;
-            background: var(--panel-card);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            color: var(--panel-muted);
-            border: 1px solid var(--panel-border);
-            transition: all 0.2s;
-        }
-
-        .close-settings:active {
-            transform: scale(0.92);
-        }
-
-        .settings-body {
-            padding: 16px 24px 40px;
-        }
-
-        .setting-group {
-            margin-bottom: 20px;
-            padding-bottom: 18px;
-            border-bottom: 1px solid var(--panel-border);
-        }
-
-        .setting-group:last-child {
-            border-bottom: none;
-        }
-
-        .setting-label {
-            font-size: 0.65rem;
-            color: var(--panel-muted);
-            margin-bottom: 10px;
-            display: block;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            font-weight: 600;
-        }
-
-        .pro-btn {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            width: 100%;
-            padding: 12px 16px;
-            margin-bottom: 8px;
-            background: var(--panel-card);
-            border: 1px solid var(--panel-border);
-            color: var(--panel-text);
-            border-radius: 12px;
-            text-align: left;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 0.85rem;
-            font-family: 'DM Sans', sans-serif;
-            transition: all 0.15s;
-        }
-
-        .pro-btn:active {
-            transform: scale(0.98);
-            background: #1a1a26;
-        }
-
-        .pro-btn .btn-tag {
-            font-size: 0.65rem;
-            padding: 2px 8px;
-            border-radius: 6px;
-            font-weight: 600;
-            background: var(--panel-border);
-            color: var(--panel-muted);
-        }
-
-        .btn-primary {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: #fff;
-        }
-
-        .btn-primary .btn-tag {
-            background: rgba(255, 255, 255, 0.2);
-            color: #fff;
-        }
-
-        .btn-active {
-            border-color: var(--accent);
-        }
-
-        .btn-active .btn-tag {
-            background: var(--accent);
-            color: #fff;
-        }
-
-        .btn-danger {
-            background: #1c1015;
-            border-color: #2a1520;
-            color: #f87171;
-        }
-
-        .pro-select {
-            width: 100%;
-            padding: 12px 16px;
-            background: var(--panel-card);
-            border: 1px solid var(--panel-border);
-            color: #fff;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            outline: none;
-            margin-bottom: 10px;
-            font-family: 'DM Sans', sans-serif;
-        }
-
-        .slider-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 10px;
-        }
-
-        .slider-row label {
-            font-size: 0.8rem;
-            color: #aaa;
-            min-width: 80px;
-        }
-
-        .slider-row input[type=range] {
-            flex: 1;
-            accent-color: var(--accent);
-            height: 4px;
-        }
-
-        .slider-row .slider-val {
-            font-size: 0.75rem;
-            color: var(--accent);
-            min-width: 36px;
-            text-align: right;
-            font-weight: 600;
-        }
-
-        #storage-status {
-            font-size: 0.65rem;
-            color: var(--panel-muted);
-            margin: 4px 0 10px;
-            padding: 0 2px;
-        }
-
-        /* ============================
-       CALENDAR MODAL
-    ============================ */
-        #calendar-modal {
-            position: absolute;
-            bottom: -100%;
-            left: 0;
-            width: 100%;
-            height: 95%;
-            background: #fff;
-            transition: bottom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            z-index: 400;
-            border-top-left-radius: 20px;
-            border-top-right-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 -10px 60px rgba(0, 0, 0, 0.5);
-        }
-
-        #calendar-modal.show {
-            bottom: 0;
-        }
-
-        .cal-header {
-            height: 56px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 24px;
-            border-bottom: 1px solid #eee;
-            color: #333;
-            font-weight: 700;
-            font-size: 16px;
-            font-family: 'DM Sans', sans-serif;
-        }
-
-        .close-cal {
-            cursor: pointer;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #f3f4f6;
-            border-radius: 50%;
-            font-size: 16px;
-        }
-
-        /* ============================
-       TOAST NOTIFICATIONS
-    ============================ */
-        #toast {
-            position: fixed;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%) translateY(20px);
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(12px);
-            color: #fff;
-            padding: 10px 24px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-family: 'DM Sans', sans-serif;
-            font-weight: 500;
-            opacity: 0;
-            transition: all 0.3s;
-            z-index: 500;
-            pointer-events: none;
-        }
-
-        #toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        /* Hide scrollbar on settings */
-        #settings-panel::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        #settings-panel::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        #settings-panel::-webkit-scrollbar-thumb {
-            background: #333;
-            border-radius: 4px;
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#a47148" />
+<title>Adam's Cork Frame</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Caveat:wght@400;600;700&family=Kalam:wght@300;400;700&family=Shadows+Into+Light&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,1,0" />
+
+<style>
+/* =============================================================
+   ADAM'S CORK FRAME · v2 · Galaxy Tab S7+ landscape (2800x1752)
+   ============================================================= */
+
+:root {
+  /* Cork & wood palette */
+  --cork-base: #b8915f;
+  --cork-light: #d4ae7d;
+  --cork-dark: #7d5a35;
+  --cork-fiber: #6b4a28;
+  --wood-frame: #5a3a1c;
+  --wood-frame-light: #8b5e35;
+  --wood-frame-dark: #3a2410;
+
+  /* Paper / polaroid */
+  --paper: #fdfcf7;
+  --paper-shadow: rgba(40, 25, 10, 0.35);
+  --paper-soft: rgba(40, 25, 10, 0.18);
+
+  /* Sticky note pastels (washi-tape pinned) */
+  --sticky-yellow: #fef3a3;
+  --sticky-pink:   #fbcfe0;
+  --sticky-blue:   #c8e4f6;
+  --sticky-mint:   #c8edd6;
+
+  /* Washi tape colors */
+  --tape-mint: rgba(180, 230, 200, 0.78);
+  --tape-pink: rgba(245, 196, 210, 0.78);
+  --tape-blue: rgba(180, 215, 240, 0.78);
+  --tape-kraft: rgba(220, 195, 150, 0.85);
+
+  /* Settings panel */
+  --panel-bg: #0e0a06;
+  --panel-card: #1a130c;
+  --panel-border: #2a2018;
+  --panel-text: #ede4d3;
+  --panel-muted: #94886f;
+  --accent: #d4894a;
+  --accent-glow: rgba(212, 137, 74, 0.35);
+
+  /* Animation timings */
+  --transition-photos: 0.9s;
+  --rot-1: -3.4deg;
+  --rot-2: 2.1deg;
+  --rot-3: -1.6deg;
+  --rot-4: 4.2deg;
+  --rot-5: -2.8deg;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+
+body {
+  background: #000;
+  font-family: 'DM Sans', sans-serif;
+  color: #2a1f12;
+  user-select: none; -webkit-user-select: none;
+  overscroll-behavior: none;
+  transition: filter 0.8s ease;
+}
+
+#container {
+  position: relative;
+  width: 100vw; height: 100vh;
+  overflow: hidden;
+  background: #000;
+}
+
+/* =====================================================
+   WOODEN FRAME (the actual frame, around the cork)
+   ===================================================== */
+#wood-frame {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  z-index: 200;
+  border: 28px solid transparent;
+  border-image: linear-gradient(
+      135deg,
+      #6b4423 0%, #8b5e35 12%, #5a3a1c 25%, #8b5e35 38%,
+      #4a3018 50%, #8b5e35 62%, #6b4423 75%, #8b5e35 88%, #5a3a1c 100%
+    ) 1;
+  box-shadow:
+    inset 0 0 0 2px rgba(0,0,0,0.45),
+    inset 0 0 0 4px rgba(255,210,160,0.08),
+    inset 0 0 25px rgba(0,0,0,0.55),
+    0 0 0 2px #2a1810;
+}
+/* Wood grain texture overlay */
+#wood-frame::before {
+  content: '';
+  position: absolute; inset: -28px;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 14px,
+      rgba(60, 35, 12, 0.08) 14px 16px,
+      transparent 16px 30px,
+      rgba(255, 220, 170, 0.05) 30px 32px
+    );
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  /* Mask so it only shows on the frame edges */
+  -webkit-mask:
+    linear-gradient(#000, #000) padding-box,
+    linear-gradient(#000, #000);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  padding: 28px;
+}
+
+/* Hide wood frame in fullscreen mode */
+.mode-1 #wood-frame { display: none; }
+
+/* Ornamental brass corner brackets */
+.corner-bracket {
+  position: absolute;
+  width: 44px; height: 44px;
+  background:
+    radial-gradient(circle at 35% 35%, #f4d59a 0%, #c69a4f 35%, #8c6325 75%, #4a3010 100%);
+  z-index: 201;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 6px rgba(0,0,0,0.4),
+    0 2px 4px rgba(0,0,0,0.5);
+}
+.corner-bracket::after {
+  content: ''; position: absolute; inset: 6px;
+  background: radial-gradient(circle at 30% 30%, rgba(255,225,170,0.55), transparent 60%);
+  border-radius: 50%;
+}
+.bracket-tl { top: 6px; left: 6px;     clip-path: polygon(0 0, 100% 0, 100% 25%, 25% 25%, 25% 100%, 0 100%); }
+.bracket-tr { top: 6px; right: 6px;    clip-path: polygon(0 0, 100% 0, 100% 100%, 75% 100%, 75% 25%, 0 25%); }
+.bracket-bl { bottom: 6px; left: 6px;  clip-path: polygon(0 0, 25% 0, 25% 75%, 100% 75%, 100% 100%, 0 100%); }
+.bracket-br { bottom: 6px; right: 6px; clip-path: polygon(75% 0, 100% 0, 100% 100%, 0 100%, 0 75%, 75% 75%); }
+.mode-1 .corner-bracket { display: none; }
+
+/* =====================================================
+   CORK BOARD BACKGROUND (the universal backdrop)
+   ===================================================== */
+#cork-board {
+  position: absolute; inset: 0;
+  z-index: 1;
+  background-color: var(--cork-base);
+  background-image:
+    /* Big tonal patches */
+    radial-gradient(ellipse 60% 50% at 12% 18%, rgba(220, 188, 142, 0.55) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 50% at 88% 85%, rgba(80, 50, 22, 0.35) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 60% at 50% 50%, rgba(195, 158, 110, 0.18) 0%, transparent 70%),
+    radial-gradient(ellipse 30% 30% at 78% 22%, rgba(140, 102, 60, 0.18) 0%, transparent 65%),
+    radial-gradient(ellipse 35% 35% at 22% 78%, rgba(110, 80, 40, 0.20) 0%, transparent 65%),
+
+    /* Coarse cork pores - large dark specks */
+    radial-gradient(circle at 7% 12%, rgba(70,46,22,0.55) 1.4px, transparent 2.2px),
+    radial-gradient(circle at 19% 8%, rgba(75,50,25,0.50) 1.2px, transparent 2px),
+    radial-gradient(circle at 33% 17%, rgba(60,40,18,0.50) 1.6px, transparent 2.4px),
+    radial-gradient(circle at 47% 11%, rgba(80,55,28,0.48) 1.3px, transparent 2px),
+    radial-gradient(circle at 61% 19%, rgba(65,42,20,0.55) 1.5px, transparent 2.2px),
+    radial-gradient(circle at 75% 9%, rgba(70,48,22,0.50) 1.2px, transparent 2px),
+    radial-gradient(circle at 91% 16%, rgba(60,40,18,0.55) 1.4px, transparent 2.2px),
+    radial-gradient(circle at 4% 31%, rgba(78,52,26,0.48) 1.3px, transparent 2px),
+    radial-gradient(circle at 18% 38%, rgba(62,40,18,0.52) 1.5px, transparent 2.3px),
+    radial-gradient(circle at 31% 28%, rgba(72,48,22,0.48) 1.2px, transparent 2px),
+    radial-gradient(circle at 44% 36%, rgba(58,38,16,0.55) 1.6px, transparent 2.4px),
+    radial-gradient(circle at 58% 30%, rgba(75,50,24,0.48) 1.3px, transparent 2px),
+    radial-gradient(circle at 72% 38%, rgba(64,42,20,0.52) 1.5px, transparent 2.2px),
+    radial-gradient(circle at 86% 33%, rgba(78,52,26,0.48) 1.2px, transparent 2px),
+    radial-gradient(circle at 11% 51%, rgba(60,40,18,0.55) 1.4px, transparent 2.2px),
+    radial-gradient(circle at 26% 47%, rgba(72,48,22,0.50) 1.3px, transparent 2px),
+    radial-gradient(circle at 39% 56%, rgba(66,44,20,0.52) 1.5px, transparent 2.3px),
+    radial-gradient(circle at 53% 49%, rgba(78,52,26,0.48) 1.2px, transparent 2px),
+    radial-gradient(circle at 67% 56%, rgba(60,40,18,0.55) 1.4px, transparent 2.2px),
+    radial-gradient(circle at 81% 51%, rgba(72,48,22,0.50) 1.3px, transparent 2px),
+    radial-gradient(circle at 95% 58%, rgba(66,44,20,0.52) 1.5px, transparent 2.3px),
+    radial-gradient(circle at 8% 71%, rgba(78,52,26,0.48) 1.2px, transparent 2px),
+    radial-gradient(circle at 23% 67%, rgba(60,40,18,0.55) 1.4px, transparent 2.2px),
+    radial-gradient(circle at 37% 76%, rgba(72,48,22,0.50) 1.3px, transparent 2px),
+    radial-gradient(circle at 51% 69%, rgba(66,44,20,0.52) 1.5px, transparent 2.3px),
+    radial-gradient(circle at 65% 78%, rgba(78,52,26,0.48) 1.2px, transparent 2px),
+    radial-gradient(circle at 79% 71%, rgba(60,40,18,0.55) 1.4px, transparent 2.2px),
+    radial-gradient(circle at 93% 79%, rgba(72,48,22,0.50) 1.3px, transparent 2px),
+    radial-gradient(circle at 14% 89%, rgba(66,44,20,0.52) 1.5px, transparent 2.3px),
+    radial-gradient(circle at 29% 94%, rgba(78,52,26,0.48) 1.2px, transparent 2px),
+    radial-gradient(circle at 43% 87%, rgba(60,40,18,0.55) 1.4px, transparent 2.2px),
+    radial-gradient(circle at 57% 96%, rgba(72,48,22,0.50) 1.3px, transparent 2px),
+    radial-gradient(circle at 71% 88%, rgba(66,44,20,0.52) 1.5px, transparent 2.3px),
+    radial-gradient(circle at 85% 94%, rgba(78,52,26,0.48) 1.2px, transparent 2px),
+
+    /* Light cork fibers - lighter tan flecks */
+    radial-gradient(circle at 13% 22%, rgba(220, 192, 145, 0.65) 1.2px, transparent 2.6px),
+    radial-gradient(circle at 27% 14%, rgba(215, 188, 140, 0.55) 1.4px, transparent 3px),
+    radial-gradient(circle at 42% 24%, rgba(225, 195, 148, 0.60) 1.3px, transparent 2.8px),
+    radial-gradient(circle at 56% 16%, rgba(220, 192, 145, 0.55) 1.5px, transparent 3px),
+    radial-gradient(circle at 70% 26%, rgba(215, 188, 140, 0.60) 1.2px, transparent 2.6px),
+    radial-gradient(circle at 84% 18%, rgba(225, 195, 148, 0.55) 1.4px, transparent 3px),
+    radial-gradient(circle at 9% 41%, rgba(220, 192, 145, 0.60) 1.3px, transparent 2.8px),
+    radial-gradient(circle at 24% 33%, rgba(215, 188, 140, 0.55) 1.5px, transparent 3px),
+    radial-gradient(circle at 38% 43%, rgba(225, 195, 148, 0.60) 1.2px, transparent 2.6px),
+    radial-gradient(circle at 52% 35%, rgba(220, 192, 145, 0.55) 1.4px, transparent 3px),
+    radial-gradient(circle at 66% 45%, rgba(215, 188, 140, 0.60) 1.3px, transparent 2.8px),
+    radial-gradient(circle at 80% 37%, rgba(225, 195, 148, 0.55) 1.5px, transparent 3px),
+    radial-gradient(circle at 5% 61%, rgba(220, 192, 145, 0.60) 1.2px, transparent 2.6px),
+    radial-gradient(circle at 20% 53%, rgba(215, 188, 140, 0.55) 1.4px, transparent 3px),
+    radial-gradient(circle at 34% 63%, rgba(225, 195, 148, 0.60) 1.3px, transparent 2.8px),
+    radial-gradient(circle at 48% 55%, rgba(220, 192, 145, 0.55) 1.5px, transparent 3px),
+    radial-gradient(circle at 62% 65%, rgba(215, 188, 140, 0.60) 1.2px, transparent 2.6px),
+    radial-gradient(circle at 76% 57%, rgba(225, 195, 148, 0.55) 1.4px, transparent 3px),
+    radial-gradient(circle at 90% 67%, rgba(220, 192, 145, 0.60) 1.3px, transparent 2.8px),
+    radial-gradient(circle at 16% 81%, rgba(215, 188, 140, 0.55) 1.5px, transparent 3px),
+    radial-gradient(circle at 30% 73%, rgba(225, 195, 148, 0.60) 1.2px, transparent 2.6px),
+    radial-gradient(circle at 44% 83%, rgba(220, 192, 145, 0.55) 1.4px, transparent 3px),
+    radial-gradient(circle at 58% 75%, rgba(215, 188, 140, 0.60) 1.3px, transparent 2.8px),
+    radial-gradient(circle at 72% 85%, rgba(225, 195, 148, 0.55) 1.5px, transparent 3px),
+    radial-gradient(circle at 86% 77%, rgba(220, 192, 145, 0.60) 1.2px, transparent 2.6px);
+  background-size:
+    100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%,
+    14% 14%, 14% 14%, 14% 14%, 14% 14%, 14% 14%, 14% 14%, 14% 14%,
+    14% 14%, 14% 14%, 14% 14%, 14% 14%, 14% 14%, 14% 14%, 14% 14%,
+    14% 14%, 14% 14%, 14% 14%, 14% 14%, 14% 14%, 14% 14%, 14% 14%,
+    14% 14%, 14% 14%, 14% 14%, 14% 14%, 14% 14%, 14% 14%, 14% 14%,
+    14% 14%, 14% 14%,
+    24% 24%, 24% 24%, 24% 24%, 24% 24%, 24% 24%, 24% 24%, 24% 24%,
+    24% 24%, 24% 24%, 24% 24%, 24% 24%, 24% 24%, 24% 24%, 24% 24%,
+    24% 24%, 24% 24%, 24% 24%, 24% 24%, 24% 24%, 24% 24%, 24% 24%,
+    24% 24%, 24% 24%, 24% 24%;
+  box-shadow:
+    inset 0 0 80px rgba(40, 22, 8, 0.45),
+    inset 0 0 200px rgba(20, 10, 4, 0.25);
+}
+/* Vignette overlay over cork */
+#cork-board::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(20, 10, 4, 0.35) 100%);
+  pointer-events: none;
+}
+
+/* Hide cork in fullscreen */
+.mode-1 #cork-board { background-color: #000; background-image: none; box-shadow: none; }
+.mode-1 #cork-board::after { display: none; }
+
+/* =====================================================
+   PHOTO LAYER
+   ===================================================== */
+#photo-wrapper {
+  position: absolute; inset: 0;
+  z-index: 5;
+}
+
+.img-box {
+  position: absolute;
+  display: flex; flex-direction: column;
+  justify-content: flex-start; align-items: center;
+  touch-action: none;
+  overflow: visible;
+  transition:
+    left 0.7s cubic-bezier(0.34, 1.56, 0.64, 1),
+    top  0.7s cubic-bezier(0.34, 1.56, 0.64, 1),
+    width 0.7s cubic-bezier(0.34, 1.56, 0.64, 1),
+    height 0.7s cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.5s;
+}
+.img-box.dragging { transition: none !important; }
+
+/* --- MODE 1: single fullscreen --- */
+.mode-1 .img-box {
+  width: 100% !important; height: 100% !important;
+  top: 0 !important; left: 0 !important;
+  transform: none !important;
+  background: #000;
+  padding: 0 !important;
+}
+.mode-1 .pin-handle, .mode-1 .resize-handle, .mode-1 .photo-tape, .mode-1 .photo-clip { display: none !important; }
+
+/* --- MODE 3: cork board polaroids --- */
+.mode-3 .img-box {
+  background: linear-gradient(160deg, #ffffff 0%, #fafaf3 35%, #f3f0e6 100%);
+  padding: 14px 14px 56px 14px;
+  border-radius: 2px;
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.06),
+    0 3px 5px rgba(0,0,0,0.08),
+    1px 5px 12px rgba(20,10,4,0.18),
+    3px 10px 22px rgba(20,10,4,0.22),
+    6px 18px 40px rgba(20,10,4,0.18),
+    0 0 0 0.5px rgba(40,25,10,0.10);
+}
+
+/* Square photo variant (no caption strip) */
+.mode-3 .img-box.style-square {
+  padding: 10px 10px 10px 10px;
+}
+.mode-3 .img-box.style-square .photo-caption { display: none; }
+
+/* Photo paper texture overlay */
+.mode-3 .img-box::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(circle at 22% 18%, rgba(0,0,0,0.012) 1px, transparent 1px),
+    radial-gradient(circle at 78% 32%, rgba(0,0,0,0.010) 1px, transparent 1px),
+    radial-gradient(circle at 38% 70%, rgba(0,0,0,0.012) 1px, transparent 1px),
+    radial-gradient(circle at 62% 88%, rgba(0,0,0,0.008) 1px, transparent 1px);
+  background-size: 6px 6px, 8px 8px, 7px 7px, 5px 5px;
+  pointer-events: none;
+  z-index: 1;
+  border-radius: 2px;
+}
+
+.mode-3 .media-container { border-radius: 1px; overflow: hidden; }
+
+/* Pins (push-pin style) */
+.pin-handle {
+  position: absolute;
+  top: -13px; left: 50%;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  cursor: move;
+  box-shadow:
+    inset -3px -3px 6px rgba(0,0,0,0.35),
+    inset 3px 3px 5px rgba(255,255,255,0.55),
+    1px 4px 7px rgba(0,0,0,0.45),
+    0 9px 4px -4px rgba(0,0,0,0.18);
+  border: none;
+  display: none;
+}
+.pin-handle::before {
+  content: '';
+  position: absolute;
+  top: 4px; left: 6px;
+  width: 6px; height: 5px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(255,255,255,0.85) 0%, transparent 70%);
+  pointer-events: none;
+}
+.pin-handle::after {
+  content: '';
+  position: absolute;
+  top: 100%; left: 50%;
+  transform: translateX(-50%);
+  width: 4px; height: 9px;
+  background: linear-gradient(to bottom, rgba(60,60,60,0.55), rgba(0,0,0,0.05));
+  border-radius: 0 0 1px 1px;
+}
+.mode-3 .pin-handle { display: block; }
+
+.pin-red    { background: linear-gradient(135deg, #f87171, #b91c1c); }
+.pin-blue   { background: linear-gradient(135deg, #60a5fa, #1d4ed8); }
+.pin-green  { background: linear-gradient(135deg, #34d399, #047857); }
+.pin-yellow { background: linear-gradient(135deg, #fbbf24, #b45309); }
+.pin-purple { background: linear-gradient(135deg, #a78bfa, #6d28d9); }
+.pin-white  { background: linear-gradient(135deg, #ffffff, #d4d4d4); }
+.pin-orange { background: linear-gradient(135deg, #fb923c, #c2410c); }
+.pin-teal   { background: linear-gradient(135deg, #5eead4, #0f766e); }
+
+/* Washi tape strip on photo (some variants) */
+.photo-tape {
+  position: absolute;
+  width: 78px; height: 22px;
+  top: -8px; left: 50%;
+  transform: translateX(-50%) rotate(-3deg);
+  z-index: 45;
+  pointer-events: none;
+  background: var(--tape-mint);
+  background-image:
+    linear-gradient(90deg,
+      transparent 0%, transparent 5%,
+      rgba(255,255,255,0.25) 5%, rgba(255,255,255,0.25) 7%,
+      transparent 7%, transparent 11%,
+      rgba(255,255,255,0.18) 11%, rgba(255,255,255,0.18) 13%,
+      transparent 13%, transparent 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.35),
+    inset 0 -1px 0 rgba(0,0,0,0.12),
+    0 2px 5px rgba(0,0,0,0.18);
+  /* Torn edges */
+  clip-path: polygon(
+    0% 30%, 4% 18%, 8% 35%, 13% 22%, 18% 30%, 23% 18%, 28% 28%, 33% 18%, 38% 30%,
+    44% 22%, 50% 30%, 56% 18%, 62% 28%, 68% 22%, 74% 35%, 80% 18%, 86% 30%, 92% 18%, 96% 35%, 100% 22%,
+    100% 65%, 96% 80%, 92% 70%, 86% 80%, 80% 65%, 74% 78%, 68% 65%, 62% 80%, 56% 70%, 50% 80%,
+    44% 70%, 38% 80%, 33% 65%, 28% 80%, 23% 70%, 18% 80%, 13% 65%, 8% 78%, 4% 65%, 0% 80%
+  );
+}
+.photo-tape.tape-pink  { background-color: var(--tape-pink); }
+.photo-tape.tape-blue  { background-color: var(--tape-blue); }
+.photo-tape.tape-kraft { background-color: var(--tape-kraft); }
+
+/* Paper clip on some photos */
+.photo-clip {
+  position: absolute;
+  top: -10px; right: 18px;
+  width: 22px; height: 50px;
+  z-index: 47;
+  pointer-events: none;
+  background: none;
+}
+.photo-clip svg { width: 100%; height: 100%; filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.45)); }
+.mode-3 .photo-clip { display: block; }
+
+.resize-handle {
+  position: absolute; bottom: -4px; right: -4px;
+  width: 30px; height: 30px;
+  cursor: nwse-resize;
+  display: none;
+  z-index: 40;
+  border-radius: 0 0 4px 0;
+}
+.resize-handle::after {
+  content: '';
+  position: absolute; bottom: 6px; right: 6px;
+  width: 12px; height: 12px;
+  border-right: 2px solid rgba(0,0,0,0.22);
+  border-bottom: 2px solid rgba(0,0,0,0.22);
+}
+.mode-3 .resize-handle { display: block; }
+
+.media-container {
+  width: 100%; height: 100%;
+  overflow: hidden; position: relative;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.mode-1 .media-container { cursor: default; }
+
+.media-item {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  transform: scale(1.015);
+  transition:
+    opacity var(--transition-photos) ease,
+    transform calc(var(--transition-photos) * 1.6) ease-out;
+  pointer-events: none;
+  display: block;
+}
+.media-item.loaded { opacity: 1; transform: scale(1); }
+.mode-3 .media-item { object-fit: cover; }
+
+.media-container .media-item.fading-out {
+  position: absolute; top: 0; left: 0;
+  opacity: 0;
+  transform: scale(1);
+  transition: opacity var(--transition-photos) ease;
+}
+
+/* Ken Burns drift */
+.ken-burns { animation: kb 24s infinite alternate ease-in-out; }
+@keyframes kb {
+  0%   { transform: scale(1.0)  translate(0%,    0%); }
+  100% { transform: scale(1.13) translate(-1.5%, -1.5%); }
+}
+
+/* Caption on polaroid bottom (handwritten) */
+.photo-caption {
+  position: absolute;
+  bottom: 14px; left: 18px; right: 18px;
+  height: 32px;
+  font-family: 'Caveat', cursive;
+  font-size: 1.3rem;
+  color: #4a3a28;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  line-height: 1;
+  font-weight: 600;
+}
+.mode-3 .photo-caption { display: flex; }
+
+/* =====================================================
+   STRINGS / YARN connecting cork items (decorative SVG)
+   ===================================================== */
+#string-layer {
+  position: absolute; inset: 0;
+  z-index: 2;  /* below photos */
+  pointer-events: none;
+}
+#string-layer svg { width: 100%; height: 100%; display: block; }
+
+/* =====================================================
+   OVERLAY UI · Sticky widgets along the bottom
+   ===================================================== */
+#overlay {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  z-index: 100;
+}
+
+#sticky-container {
+  position: absolute;
+  bottom: 28px; left: 0;
+  width: 100%;
+  padding: 0 36px;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  pointer-events: none;
+  transition: opacity 0.4s, transform 0.4s;
+}
+#sticky-container.hidden { opacity: 0; transform: translateY(20px); pointer-events: none; }
+
+.sticky-note {
+  position: relative;
+  padding: 22px 28px;
+  pointer-events: auto;
+  cursor: pointer;
+  font-family: 'Kalam', cursive;
+  color: #2a2a2a;
+  transform-origin: center top;
+  transition: transform 0.2s;
+  box-shadow:
+    0 1px 1px rgba(0,0,0,0.10),
+    0 4px 8px rgba(0,0,0,0.14),
+    0 10px 20px rgba(0,0,0,0.16),
+    0 20px 38px rgba(0,0,0,0.10),
+    3px 5px 9px rgba(0,0,0,0.07);
+  background-image: linear-gradient(135deg, rgba(255,255,255,0.45) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.025) 100%);
+  background-blend-mode: overlay;
+}
+.sticky-note::before {
+  content: '';
+  position: absolute;
+  bottom: 0; right: 0;
+  width: 22px; height: 22px;
+  background: linear-gradient(225deg, rgba(0,0,0,0.07) 0%, rgba(0,0,0,0.02) 45%, transparent 50%);
+  pointer-events: none;
+}
+.sticky-note:active { transform: scale(0.97) !important; }
+
+/* Washi tape on top of every sticky widget */
+.sticky-tape {
+  position: absolute;
+  top: -10px; left: 50%;
+  transform: translateX(-50%) rotate(-2deg);
+  width: 96px; height: 24px;
+  background: var(--tape-mint);
+  background-image:
+    linear-gradient(90deg,
+      transparent 0%, transparent 4%,
+      rgba(255,255,255,0.30) 4%, rgba(255,255,255,0.30) 6%,
+      transparent 6%, transparent 12%,
+      rgba(255,255,255,0.20) 12%, rgba(255,255,255,0.20) 14%,
+      transparent 14%, transparent 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.40),
+    inset 0 -1px 0 rgba(0,0,0,0.12),
+    0 2px 5px rgba(0,0,0,0.18);
+  z-index: 60;
+  clip-path: polygon(
+    0% 25%, 5% 12%, 10% 28%, 15% 14%, 20% 26%, 25% 14%, 30% 28%, 35% 14%, 40% 26%,
+    46% 18%, 52% 28%, 58% 14%, 64% 26%, 70% 18%, 76% 30%, 82% 14%, 88% 26%, 94% 14%, 100% 28%,
+    100% 72%, 94% 86%, 88% 74%, 82% 86%, 76% 72%, 70% 84%, 64% 72%, 58% 86%, 52% 76%, 46% 86%,
+    40% 76%, 35% 86%, 30% 72%, 25% 86%, 20% 76%, 15% 86%, 10% 72%, 5% 84%, 0% 76%
+  );
+}
+.sticky-tape.tape-pink  { background-color: var(--tape-pink); }
+.sticky-tape.tape-blue  { background-color: var(--tape-blue); }
+.sticky-tape.tape-kraft { background-color: var(--tape-kraft); }
+
+/* Time Widget */
+#time-widget {
+  background: var(--sticky-yellow);
+  background-image: linear-gradient(135deg, rgba(255,255,255,0.55) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.025) 100%);
+  transform: rotate(-1.6deg);
+  text-align: center;
+  min-width: 220px;
+}
+#time-display {
+  font-size: 4.6rem; font-weight: 700;
+  line-height: 1; color: #1a1a1a;
+  letter-spacing: -1.5px;
+  font-family: 'Kalam', cursive;
+}
+#ampm {
+  font-size: 1.3rem; font-weight: 400; color: #777;
+  margin-left: 4px;
+  font-family: 'Kalam', cursive;
+}
+#date-line {
+  font-size: 1.2rem; color: #555;
+  margin-top: 8px;
+  font-family: 'Kalam', cursive;
+  font-weight: 400;
+}
+
+/* Agenda Widget */
+#agenda-box {
+  background: var(--sticky-pink);
+  background-image: linear-gradient(135deg, rgba(255,255,255,0.50) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.025) 100%);
+  transform: rotate(1.0deg);
+  display: flex;
+  gap: 22px;
+  text-align: center;
+}
+.day-col { display: flex; flex-direction: column; gap: 4px; }
+.day-label {
+  font-size: 1rem; text-transform: uppercase;
+  color: #888; font-weight: 700; letter-spacing: 1px;
+  font-family: 'Kalam', cursive;
+}
+.day-date {
+  font-size: 2.6rem; font-weight: 700;
+  line-height: 1; color: #2a2a2a;
+  font-family: 'Kalam', cursive;
+}
+.day-sub { font-size: 1rem; color: #777; font-family: 'Kalam', cursive; }
+.day-divider {
+  width: 1px; background: rgba(0,0,0,0.13);
+  align-self: stretch; margin: 4px 0;
+}
+
+/* Weather Widget */
+#weather-box {
+  background: var(--sticky-blue);
+  background-image: linear-gradient(135deg, rgba(255,255,255,0.55) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.025) 100%);
+  transform: rotate(-0.8deg);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 270px;
+  text-align: right;
+}
+#weather-main { display: flex; align-items: center; gap: 12px; }
+#weather-icon { font-size: 48px; color: #0369a1; }
+#temp {
+  font-size: 4rem; font-weight: 700;
+  line-height: 1; color: #1a1a1a;
+  font-family: 'Kalam', cursive;
+}
+#condition {
+  font-size: 1.25rem; font-weight: 600;
+  text-transform: capitalize;
+  color: #3a3a3a;
+  font-family: 'Kalam', cursive;
+}
+#weather-details {
+  font-size: 1rem; color: #555;
+  margin-top: 6px;
+  font-family: 'Kalam', cursive;
+  line-height: 1.45;
+  text-align: right;
+}
+#weather-tomorrow {
+  font-size: 0.95rem; color: #666;
+  margin-top: 6px;
+  font-family: 'Kalam', cursive;
+  line-height: 1.3;
+  text-align: right;
+  border-top: 1px dashed rgba(0,0,0,0.13);
+  padding-top: 6px;
+}
+
+/* Hide widgets in mode 1 by default */
+.mode-1 #sticky-container { opacity: 0; pointer-events: none; }
+
+/* =====================================================
+   TOP-RIGHT: Settings & status badges
+   ===================================================== */
+#top-bar {
+  position: absolute;
+  top: 28px; right: 28px;
+  display: flex;
+  gap: 14px;
+  z-index: 250;
+  pointer-events: none;
+}
+#top-bar > * { pointer-events: auto; }
+
+#sync-status {
+  display: flex; align-items: center;
+  gap: 8px;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  padding: 8px 14px;
+  border-radius: 22px;
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 4px 18px rgba(0,0,0,0.25);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+#sync-status.visible { opacity: 1; }
+#sync-status .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 8px #34d399;
+}
+#sync-status.syncing .dot { background: #fbbf24; box-shadow: 0 0 8px #fbbf24; animation: pulse 1.2s infinite; }
+#sync-status.error .dot   { background: #f87171; box-shadow: 0 0 8px #f87171; }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity: 0.4; } }
+
+#map-btn, #settings-btn {
+  width: 52px; height: 52px;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 50%;
+  color: rgba(255,255,255,0.85);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  cursor: pointer;
+  box-shadow: 0 4px 22px rgba(0,0,0,0.30), 0 0 0 0.5px rgba(255,255,255,0.06);
+  transition: transform 0.2s, background 0.2s;
+}
+#map-btn:active, #settings-btn:active { transform: scale(0.92); }
+#settings-btn .material-symbols-rounded { transition: transform 0.4s; }
+#settings-btn.active .material-symbols-rounded { transform: rotate(90deg); }
+
+/* =====================================================
+   SETTINGS PANEL
+   ===================================================== */
+#settings-panel {
+  position: absolute;
+  top: 0; right: -440px;
+  width: 420px;
+  height: 100%;
+  background: var(--panel-bg);
+  color: var(--panel-text);
+  z-index: 280;
+  transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  border-left: 1px solid var(--panel-border);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #3a2c1c transparent;
+}
+#settings-panel.open { right: 0; }
+.settings-header {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 22px 26px;
+  background: var(--panel-bg);
+  border-bottom: 1px solid var(--panel-border);
+}
+.settings-title {
+  font-family: 'Permanent Marker', cursive;
+  font-size: 1.5rem;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+.close-settings {
+  cursor: pointer;
+  width: 38px; height: 38px;
+  background: var(--panel-card);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  color: var(--panel-muted);
+  border: 1px solid var(--panel-border);
+  transition: all 0.2s;
+}
+.close-settings:active { transform: scale(0.92); }
+.settings-body { padding: 18px 26px 60px; }
+.setting-group {
+  margin-bottom: 24px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--panel-border);
+}
+.setting-group:last-child { border-bottom: none; }
+.setting-label {
+  font-size: 0.7rem; color: var(--panel-muted);
+  margin-bottom: 12px; display: block;
+  text-transform: uppercase; letter-spacing: 2.5px;
+  font-weight: 700;
+}
+.pro-btn {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%;
+  padding: 14px 18px;
+  margin-bottom: 10px;
+  background: var(--panel-card);
+  border: 1px solid var(--panel-border);
+  color: var(--panel-text);
+  border-radius: 14px;
+  text-align: left;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.92rem;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s;
+}
+.pro-btn:active { transform: scale(0.98); background: #221a12; }
+.pro-btn .btn-tag {
+  font-size: 0.7rem;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  background: var(--panel-border);
+  color: var(--panel-muted);
+}
+.btn-primary  { background: var(--accent); border-color: var(--accent); color: #1a0f06; font-weight: 600; }
+.btn-primary .btn-tag { background: rgba(0,0,0,0.25); color: #fff; }
+.btn-active   { border-color: var(--accent); }
+.btn-active .btn-tag { background: var(--accent); color: #1a0f06; }
+.btn-danger   { background: #1c1010; border-color: #2a1818; color: #f87171; }
+
+.pro-input, .pro-select {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--panel-card);
+  border: 1px solid var(--panel-border);
+  color: #fff;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  outline: none;
+  margin-bottom: 10px;
+  font-family: 'DM Sans', sans-serif;
+}
+.pro-input:focus, .pro-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+.input-row {
+  display: flex; gap: 8px; margin-bottom: 10px;
+}
+.input-row .pro-input { margin-bottom: 0; flex: 1; }
+
+.slider-row {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 12px;
+}
+.slider-row label {
+  font-size: 0.85rem;
+  color: #b8a888;
+  min-width: 90px;
+}
+.slider-row input[type=range] {
+  flex: 1;
+  accent-color: var(--accent);
+  height: 4px;
+}
+.slider-row .slider-val {
+  font-size: 0.8rem;
+  color: var(--accent);
+  min-width: 44px;
+  text-align: right;
+  font-weight: 700;
+}
+
+#storage-status, #github-status {
+  font-size: 0.72rem;
+  color: var(--panel-muted);
+  margin: 6px 0 12px;
+  padding: 0 4px;
+  line-height: 1.4;
+}
+#github-status.ok    { color: #6ee7b7; }
+#github-status.warn  { color: #fbbf24; }
+#github-status.error { color: #fca5a5; }
+
+.help-text {
+  font-size: 0.75rem;
+  color: var(--panel-muted);
+  line-height: 1.5;
+  margin-top: 6px;
+  padding: 0 4px;
+}
+.help-text code {
+  background: var(--panel-card);
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: var(--accent);
+  font-size: 0.85em;
+  border: 1px solid var(--panel-border);
+}
+
+/* =====================================================
+   TOAST
+   ===================================================== */
+#toast {
+  position: fixed;
+  bottom: 130px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(15, 8, 4, 0.92);
+  backdrop-filter: blur(14px);
+  color: #fff;
+  padding: 12px 26px;
+  border-radius: 14px;
+  font-size: 0.92rem;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  border: 1px solid rgba(255,200,140,0.15);
+  opacity: 0;
+  transition: all 0.3s;
+  z-index: 500;
+  pointer-events: none;
+  max-width: 80%;
+  text-align: center;
+}
+#toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* =====================================================
+   MAP IFRAME OVERLAY (loads map2.html in a frame)
+   ===================================================== */
+#map-iframe-container {
+  position: absolute; inset: 0;
+  z-index: 400;
+  display: none;
+  background: #000;
+}
+#map-iframe-container iframe {
+  width: 100%; height: 100%;
+  border: 0;
+}
+#map-iframe-container .map-close {
+  position: absolute;
+  top: 22px; right: 22px;
+  width: 48px; height: 48px;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 50%;
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 22px;
+  z-index: 410;
+}
+
+/* =====================================================
+   LOADING SPLASH
+   ===================================================== */
+#splash {
+  position: absolute; inset: 0;
+  z-index: 999;
+  background: #1a0f06;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  color: #f3e6d0;
+  font-family: 'Permanent Marker', cursive;
+  transition: opacity 0.6s ease 0.4s;
+}
+#splash.hidden { opacity: 0; pointer-events: none; }
+#splash h1 { font-size: 2.2rem; margin-bottom: 8px; letter-spacing: 1px; }
+#splash p  { font-family: 'Caveat', cursive; font-size: 1.5rem; color: #c4b294; }
+.spinner {
+  margin-top: 20px;
+  width: 36px; height: 36px;
+  border: 3px solid rgba(255,200,140,0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* =====================================================
+   RESPONSIVE — Galaxy Tab S7+ landscape sweet spot
+   ===================================================== */
+@media (max-width: 1100px) {
+  #time-display { font-size: 3.6rem; }
+  #temp { font-size: 3.2rem; }
+  .day-date { font-size: 2.1rem; }
+  #sticky-container { padding: 0 22px; gap: 14px; }
+  .sticky-note { padding: 18px 22px; }
+}
+@media (max-width: 720px) {
+  #sticky-container { flex-direction: column; align-items: stretch; gap: 10px; }
+  #settings-panel { width: 100%; right: -100%; }
+}
+
+/* High-DPI tablet fine-tuning (S7+) */
+@media (min-width: 1280px) {
+  #time-display { font-size: 5rem; }
+  #temp { font-size: 4.3rem; }
+  .day-date { font-size: 2.8rem; }
+  .sticky-note { padding: 26px 32px; }
+  #weather-box { min-width: 300px; }
+  #time-widget { min-width: 250px; }
+}
+
+/* Hide scrollbars on settings */
+#settings-panel::-webkit-scrollbar { width: 6px; }
+#settings-panel::-webkit-scrollbar-track { background: transparent; }
+#settings-panel::-webkit-scrollbar-thumb { background: #3a2c1c; border-radius: 4px; }
+</style>
 </head>
-
 <body>
-    <input type="file" id="fileInput" webkitdirectory directory multiple accept="image/*,video/*"
-        style="display:none" />
 
-    <div id="container">
-        <div id="settings-btn"><span class="material-symbols-rounded">settings</span></div>
+<input type="file" id="fileInput" webkitdirectory directory multiple accept="image/*,video/*" style="display:none" />
 
-        <div id="settings-panel">
-            <div class="settings-header">
-                <div class="settings-title">Adam's Frame</div>
-                <div class="close-settings" id="btn-close-settings">
-                    <span class="material-symbols-rounded" style="font-size:18px">close</span>
-                </div>
-            </div>
-            <div class="settings-body">
+<div id="container">
 
-                <div class="setting-group">
-                    <span class="setting-label">Display</span>
-                    <div class="slider-row">
-                        <label>Brightness</label>
-                        <input type="range" id="brightness-slider" min="20" max="100" step="5" value="100">
-                        <span class="slider-val" id="bright-val">100%</span>
-                    </div>
-                    <div class="slider-row">
-                        <label>Transition</label>
-                        <input type="range" id="transition-slider" min="3" max="20" step="1" value="9">
-                        <span class="slider-val" id="trans-val">0.9s</span>
-                    </div>
-                    <button id="btn-auto-bright" class="pro-btn">
-                        Night Auto-Dim <span class="btn-tag">OFF</span>
-                    </button>
-                    <button id="btn-screen-wake" class="pro-btn">
-                        Keep Screen On <span class="btn-tag">OFF</span>
-                    </button>
-                </div>
+  <!-- splash -->
+  <div id="splash">
+    <h1>Adam's Cork Frame</h1>
+    <p>warming up the pushpins…</p>
+    <div class="spinner"></div>
+  </div>
 
-                <div class="setting-group">
-                    <span class="setting-label">Photos</span>
-                    <button class="pro-btn btn-primary" id="btn-upload">
-                        <span>Load Folder</span>
-                        <span class="material-symbols-rounded" style="font-size:18px">folder_open</span>
-                    </button>
-                    <div id="storage-status">Checking memory...</div>
-                    <button class="pro-btn btn-danger" id="btn-clear">
-                        <span>Clear All Photos</span>
-                        <span class="material-symbols-rounded" style="font-size:16px">delete_forever</span>
-                    </button>
-                </div>
+  <!-- cork backdrop -->
+  <div id="cork-board"></div>
 
-                <div class="setting-group">
-                    <span class="setting-label">Slideshow</span>
-                    <select id="timer-select" class="pro-select">
-                        <option value="30000">30 Seconds</option>
-                        <option value="60000">1 Minute</option>
-                        <option value="300000">5 Minutes</option>
-                        <option value="600000">10 Minutes</option>
-                        <option value="900000">15 Minutes</option>
-                        <option value="1800000">30 Minutes</option>
-                        <option value="3600000">1 Hour</option>
-                        <option value="10800000">3 Hours</option>
-                        <option value="static">Static (Manual)</option>
-                    </select>
-                    <button id="btn-shuffle" class="pro-btn">
-                        Shuffle <span class="btn-tag">ON</span>
-                    </button>
-                    <button id="btn-motion" class="pro-btn">
-                        Ken Burns Motion <span class="btn-tag">OFF</span>
-                    </button>
-                </div>
+  <!-- decorative string layer (between photos) -->
+  <div id="string-layer">
+    <svg id="string-svg" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+  </div>
 
-                <div class="setting-group">
-                    <span class="setting-label">Layout</span>
-                    <button id="btn-layout" class="pro-btn">
-                        Mode <span class="btn-tag">CORKBOARD</span>
-                    </button>
-                    <button id="btn-auto-arrange" class="pro-btn">
-                        Auto-Arrange <span class="btn-tag">ON</span>
-                    </button>
-                    <button id="btn-reset-pins" class="pro-btn" style="display:none">
-                        Reset Layout <span class="btn-tag">↺</span>
-                    </button>
-                </div>
+  <!-- photos -->
+  <div id="photo-wrapper"></div>
 
-                <div class="setting-group">
-                    <span class="setting-label">Tools</span>
-                    <button id="btn-rotate" class="pro-btn">
-                        Rotate Canvas <span class="btn-tag">0°</span>
-                    </button>
-                    <button id="btn-fullscreen" class="pro-btn">
-                        Fullscreen <span class="material-symbols-rounded" style="font-size:16px">fullscreen</span>
-                    </button>
-                </div>
+  <!-- wooden frame (always above cork+photos visually, but below UI) -->
+  <div id="wood-frame"></div>
+  <div class="corner-bracket bracket-tl"></div>
+  <div class="corner-bracket bracket-tr"></div>
+  <div class="corner-bracket bracket-bl"></div>
+  <div class="corner-bracket bracket-br"></div>
 
-            </div>
+  <!-- top bar -->
+  <div id="top-bar">
+    <div id="sync-status"><span class="dot"></span><span id="sync-text">Synced</span></div>
+    <div id="map-btn" title="Open map dashboard"><span class="material-symbols-rounded">map</span></div>
+    <div id="settings-btn"><span class="material-symbols-rounded">settings</span></div>
+  </div>
+
+  <!-- overlay widgets -->
+  <div id="overlay">
+    <div id="sticky-container">
+
+      <div class="sticky-note" id="time-widget">
+        <span class="sticky-tape tape-kraft"></span>
+        <div><span id="time-display">--:--</span><span id="ampm"></span></div>
+        <div id="date-line">loading…</div>
+      </div>
+
+      <div class="sticky-note" id="agenda-box">
+        <span class="sticky-tape tape-pink"></span>
+        <div class="day-col">
+          <span class="day-label" id="agenda-d1-label">today</span>
+          <span class="day-date" id="agenda-d1-date">--</span>
+          <span class="day-sub" id="agenda-d1-sub">—</span>
         </div>
-
-        <!-- Photo Layer -->
-        <div id="photo-wrapper" class="mode-3">
-            <div id="box-1" class="img-box">
-                <div class="pin-handle"></div>
-                <div class="media-container" data-box="1"></div>
-                <div class="photo-caption"></div>
-                <div class="resize-handle"></div>
-            </div>
-            <div id="box-2" class="img-box">
-                <div class="pin-handle"></div>
-                <div class="media-container" data-box="2"></div>
-                <div class="photo-caption"></div>
-                <div class="resize-handle"></div>
-            </div>
-            <div id="box-3" class="img-box">
-                <div class="pin-handle"></div>
-                <div class="media-container" data-box="3"></div>
-                <div class="photo-caption"></div>
-                <div class="resize-handle"></div>
-            </div>
+        <div class="day-divider"></div>
+        <div class="day-col">
+          <span class="day-label" id="agenda-d2-label">tom.</span>
+          <span class="day-date" id="agenda-d2-date">--</span>
+          <span class="day-sub" id="agenda-d2-sub">—</span>
         </div>
-
-        <!-- Overlay UI -->
-        <div id="overlay">
-            <div id="sticky-container">
-                <div id="time-widget" class="sticky-note">
-                    <div class="widget-pin wp-red"></div>
-                    <div id="time-display">00:00</div>
-                    <div id="date-line">Loading...</div>
-                </div>
-
-                <div id="agenda-box" class="sticky-note">
-                    <div class="widget-pin wp-green"></div>
-                    <div class="day-col">
-                        <span class="day-label">Today</span>
-                        <span class="day-date" id="date-today">--</span>
-                        <span class="day-sub" id="date-today-sub"></span>
-                    </div>
-                    <div class="day-divider"></div>
-                    <div class="day-col">
-                        <span class="day-label">Tomorrow</span>
-                        <span class="day-date" id="date-tmrw">--</span>
-                        <span class="day-sub" id="date-tmrw-sub"></span>
-                    </div>
-                </div>
-
-                <div id="weather-box" class="sticky-note">
-                    <div class="widget-pin wp-blue"></div>
-                    <div id="weather-main">
-                        <div id="temp">--°</div>
-                        <span class="material-symbols-rounded" id="weather-icon">wb_sunny</span>
-                    </div>
-                    <div id="condition">Loading</div>
-                    <div id="weather-details">Fetching forecast...</div>
-                    <div id="weather-tomorrow"></div>
-                </div>
-
-                <div id="travel-widget" class="sticky-note"
-                    onclick="document.getElementById('map-iframe-container').style.display='block'"
-                    style="background:#ecfdf5;transform:rotate(2.2deg);text-align:center;min-width:140px;cursor:pointer;">
-                    <div class="widget-pin wp-green"></div>
-                    <div style="font-size:2.2rem;line-height:1;">✈️</div>
-                    <div
-                        style="font-family:'Kalam',cursive;font-size:1.15rem;font-weight:700;color:#065f46;margin-top:4px;">
-                        Travel Plans</div>
-                    <div style="font-family:'Kalam',cursive;font-size:0.75rem;color:#6b7280;margin-top:2px;">tap to
-                        explore</div>
-                </div>
-            </div>
+        <div class="day-divider"></div>
+        <div class="day-col">
+          <span class="day-label" id="agenda-d3-label">wed</span>
+          <span class="day-date" id="agenda-d3-date">--</span>
+          <span class="day-sub" id="agenda-d3-sub">—</span>
         </div>
+      </div>
 
-        <!-- Calendar Modal -->
-        <div id="calendar-modal">
-            <div class="cal-header">
-                <span>Calendar</span>
-                <div class="close-cal" id="btn-close-cal">
-                    <span class="material-symbols-rounded" style="font-size:18px">close</span>
-                </div>
-            </div>
-            <iframe
-                src="https://calendar.google.com/calendar/embed?src=runner4evs%40gmail.com&ctz=America%2FDenver&mode=MONTH&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=0&showCalendars=0&bgcolor=%23ffffff"
-                style="border:0; width:100%; height:calc(100% - 56px);" frameborder="0" scrolling="no" loading="lazy">
-            </iframe>
+      <div class="sticky-note" id="weather-box">
+        <span class="sticky-tape tape-blue"></span>
+        <div id="weather-main">
+          <span class="material-symbols-rounded" id="weather-icon">cloud</span>
+          <span id="temp">--°</span>
         </div>
+        <div id="condition">loading…</div>
+        <div id="weather-details">— · — · —</div>
+        <div id="weather-tomorrow">tomorrow: —</div>
+      </div>
 
-        <div id="toast"></div>
+    </div>
+  </div>
+
+  <!-- settings panel -->
+  <div id="settings-panel">
+    <div class="settings-header">
+      <div class="settings-title">Adam's Frame</div>
+      <div class="close-settings" id="btn-close-settings">
+        <span class="material-symbols-rounded" style="font-size:20px">close</span>
+      </div>
     </div>
 
-    <script>
-        /* ===========================================
-           STATE
-        =========================================== */
-        const S = {
-            mediaItems: [],
-            indices: [0, 1, 2],
-            layoutMode: 3,           // Default to corkboard
-            shuffleActive: true,      // Default ON for photo frame
-            motionActive: false,
-            autoArrangeActive: true,  // Default ON
-            screenRotState: 0,
-            userLat: 40.3769,
-            userLon: -111.7958,
-            slideDuration: 3600000,
-            timers: [null, null, null],
-            timeouts: [null, null, null],
-            loadedRatios: { 1: 1, 2: 1, 3: 1 },
-            currentObjectUrls: { 1: null, 2: null, 3: null },
-            pinAssignments: { 1: null, 2: null, 3: null },
-            pinColors: ['pin-red', 'pin-blue', 'pin-green', 'pin-yellow', 'pin-purple', 'pin-white'],
-            autoBright: false,
-            manualBright: 1,
-            wakeLock: null,
-            transitionDuration: 0.9,
-            settingsOpen: false
-        };
+    <div class="settings-body">
+
+      <div class="setting-group">
+        <span class="setting-label">Display Mode</span>
+        <button class="pro-btn" data-mode="3" id="btn-mode-3">
+          Cork Board <span class="btn-tag">grid of polaroids</span>
+        </button>
+        <button class="pro-btn" data-mode="1" id="btn-mode-1">
+          Fullscreen <span class="btn-tag">single photo</span>
+        </button>
+      </div>
+
+      <div class="setting-group">
+        <span class="setting-label">Photos · GitHub Album</span>
+        <input type="text" class="pro-input" id="gh-owner" placeholder="GitHub username (e.g. Spamalapam)" />
+        <input type="text" class="pro-input" id="gh-repo"  placeholder="Repository (e.g. Photo-Frame)" />
+        <input type="text" class="pro-input" id="gh-path"  placeholder="Folder path (default: photos)" />
+        <input type="text" class="pro-input" id="gh-branch" placeholder="Branch (default: main)" />
+        <button class="pro-btn btn-primary" id="btn-gh-sync">
+          <span>Sync from GitHub</span>
+          <span class="material-symbols-rounded" style="font-size:18px">cloud_sync</span>
+        </button>
+        <div id="github-status">Not configured.</div>
+        <div class="help-text">
+          Add photos to <code>/photos</code> in your repo from any device (drag-and-drop on github.com works on phones).
+          Captions come from <code>photos.json</code>. <a href="#" id="open-photos-readme" style="color:var(--accent);">how does this work?</a>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <span class="setting-label">Photos · Local</span>
+        <button class="pro-btn" id="btn-upload">
+          <span>Load Folder from Tablet</span>
+          <span class="material-symbols-rounded" style="font-size:18px">folder_open</span>
+        </button>
+        <div id="storage-status">Checking memory…</div>
+        <button class="pro-btn btn-danger" id="btn-clear">
+          <span>Clear All Photos</span>
+          <span class="material-symbols-rounded" style="font-size:16px">delete_forever</span>
+        </button>
+      </div>
+
+      <div class="setting-group">
+        <span class="setting-label">Cork Board</span>
+        <div class="slider-row">
+          <label>Photos shown</label>
+          <input type="range" id="cork-count-slider" min="3" max="9" step="1" value="5">
+          <span class="slider-val" id="cork-count-val">5</span>
+        </div>
+        <div class="slider-row">
+          <label>Cycle (s)</label>
+          <input type="range" id="cycle-slider" min="5" max="60" step="1" value="14">
+          <span class="slider-val" id="cycle-val">14s</span>
+        </div>
+        <div class="slider-row">
+          <label>Brightness</label>
+          <input type="range" id="brightness-slider" min="20" max="100" step="5" value="100">
+          <span class="slider-val" id="bright-val">100%</span>
+        </div>
+        <div class="slider-row">
+          <label>Transition</label>
+          <input type="range" id="transition-slider" min="3" max="20" step="1" value="9">
+          <span class="slider-val" id="trans-val">0.9s</span>
+        </div>
+        <button class="pro-btn" id="btn-strings">
+          Yarn Connectors <span class="btn-tag">ON</span>
+        </button>
+        <button class="pro-btn" id="btn-tape">
+          Washi Tape on Photos <span class="btn-tag">ON</span>
+        </button>
+        <button class="pro-btn" id="btn-screen-wake">
+          Keep Screen On <span class="btn-tag">OFF</span>
+        </button>
+      </div>
+
+      <div class="setting-group">
+        <span class="setting-label">Location · Weather</span>
+        <div class="input-row">
+          <input type="text" class="pro-input" id="loc-input" placeholder="City, State (e.g. Asheville, NC)" />
+        </div>
+        <button class="pro-btn" id="btn-loc-set">
+          <span>Update Location</span>
+          <span class="material-symbols-rounded" style="font-size:16px">my_location</span>
+        </button>
+        <div id="loc-status" style="font-size:0.75rem;color:var(--panel-muted);margin-top:6px;">—</div>
+      </div>
+
+      <div class="setting-group">
+        <span class="setting-label">About</span>
+        <div class="help-text">
+          v2 · cork-forward · optimized for Galaxy Tab S7+ landscape.<br>
+          Photos sync from GitHub, cache offline.<br>
+          Tap settings → Sync from GitHub to refresh.
+        </div>
+      </div>
 
-        /* ===========================================
-           INDEXED DB
-        =========================================== */
-        const DB_NAME = 'FrameDB', STORE_NAME = 'mediaStore';
-
-        function initDB() {
-            return new Promise((res, rej) => {
-                const r = indexedDB.open(DB_NAME, 2);
-                r.onerror = () => rej(r.error);
-                r.onupgradeneeded = e => {
-                    const db = e.target.result;
-                    if (!db.objectStoreNames.contains(STORE_NAME))
-                        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-                };
-                r.onsuccess = e => res(e.target.result);
-            });
-        }
-
-        function makeFileId(f) {
-            return `${f.webkitRelativePath || f.name}::${f.size}::${f.lastModified}`;
-        }
-
-        async function saveFilesToDB(files) {
-            const status = document.getElementById('storage-status');
-            status.innerText = 'Scanning files...';
-            try {
-                const db = await initDB();
-                const valid = Array.from(files).filter(f => f.type.match(/^(image|video)/));
-                const total = valid.length;
-                if (!total) { status.innerText = 'No valid media found.'; return; }
-                let processed = 0;
-                const CHUNK = 40;
-
-                const processChunk = async (start) => {
-                    if (start >= total) {
-                        status.innerText = `${total} items saved.`;
-                        toast(`${total} photos loaded`);
-                        loadFromDB();
-                        return;
-                    }
-                    const tx = db.transaction(STORE_NAME, 'readwrite');
-                    const store = tx.objectStore(STORE_NAME);
-                    const end = Math.min(start + CHUNK, total);
-                    for (let i = start; i < end; i++) {
-                        const f = valid[i];
-                        store.put({ id: makeFileId(f), type: f.type.startsWith('video') ? 'video' : 'image', file: f });
-                    }
-                    tx.oncomplete = () => {
-                        processed = end;
-                        status.innerText = `Saving ${processed}/${total}...`;
-                        setTimeout(() => processChunk(end), 5);
-                    };
-                    tx.onerror = () => { status.innerText = 'Save error. Try again.'; };
-                };
-                processChunk(0);
-            } catch (e) {
-                status.innerText = 'Database error.';
-            }
-        }
-
-        async function loadFromDB() {
-            try {
-                const db = await initDB();
-                const tx = db.transaction(STORE_NAME, 'readonly');
-                const req = tx.objectStore(STORE_NAME).getAll();
-                req.onsuccess = () => {
-                    S.mediaItems = (req.result || []).map(r => ({ id: r.id, type: r.type, file: r.file }));
-                    const el = document.getElementById('storage-status');
-                    el.innerText = S.mediaItems.length ? `${S.mediaItems.length} memories loaded` : 'No photos yet';
-                    if (S.shuffleActive && S.mediaItems.length > 3) shuffleIndices();
-                    refreshAll();
-                };
-            } catch (e) {
-                document.getElementById('storage-status').innerText = 'DB connection error';
-            }
-        }
-
-        async function clearMemory() {
-            if (!confirm('Clear all stored photos?')) return;
-            try {
-                const db = await initDB();
-                const tx = db.transaction(STORE_NAME, 'readwrite');
-                tx.objectStore(STORE_NAME).clear();
-                tx.oncomplete = () => {
-                    [1, 2, 3].forEach(revokeBoxUrl);
-                    S.mediaItems = [];
-                    refreshAll();
-                    document.getElementById('storage-status').innerText = 'Memory cleared.';
-                    toast('All photos removed');
-                };
-            } catch (e) { }
-        }
-
-        /* ===========================================
-           MEDIA HELPERS
-        =========================================== */
-        function revokeBoxUrl(n) {
-            if (S.currentObjectUrls[n]) {
-                URL.revokeObjectURL(S.currentObjectUrls[n]);
-                S.currentObjectUrls[n] = null;
-            }
-        }
-
-        function getItemUrl(n, item) {
-            // Defer revocation — old URL may still be needed by fading-out element
-            const oldUrl = S.currentObjectUrls[n];
-            try {
-                const u = URL.createObjectURL(item.file);
-                S.currentObjectUrls[n] = u;
-                // Schedule old URL cleanup after crossfade completes
-                if (oldUrl) {
-                    setTimeout(() => {
-                        URL.revokeObjectURL(oldUrl);
-                    }, (S.transitionDuration * 1000) + 500);
-                }
-                return u;
-            } catch (e) {
-                // File handle may be stale
-                console.warn('Failed to create object URL for box', n, e);
-                return null;
-            }
-        }
-
-        // Re-read a media item's blob from IndexedDB (stale file handle recovery)
-        async function retryFromDB(itemId) {
-            try {
-                const db = await initDB();
-                return new Promise((resolve) => {
-                    const tx = db.transaction(STORE_NAME, 'readonly');
-                    const req = tx.objectStore(STORE_NAME).get(itemId);
-                    req.onsuccess = () => {
-                        if (req.result && req.result.file) {
-                            resolve(req.result.file);
-                        } else {
-                            resolve(null);
-                        }
-                    };
-                    req.onerror = () => resolve(null);
-                });
-            } catch (e) {
-                return null;
-            }
-        }
-
-        function shuffleIndices() {
-            const L = S.mediaItems.length;
-            if (L < 3) {
-                S.indices = [0, Math.min(1, L - 1), Math.min(2, L - 1)];
-                return;
-            }
-            const picks = new Set();
-            while (picks.size < 3) picks.add(Math.floor(Math.random() * L));
-            S.indices = [...picks];
-        }
-
-        function getNextIdx(curr) {
-            const L = S.mediaItems.length;
-            if (!L) return 0;
-            if (L <= 3) return (curr + 1) % L;
-
-            // Always prevent showing the same photo in multiple frames
-            const showing = new Set(S.indices);
-
-            if (S.shuffleActive) {
-                let n, tries = 0;
-                do {
-                    n = Math.floor(Math.random() * L);
-                    tries++;
-                } while (showing.has(n) && tries < 50);
-                return n;
-            }
-
-            // Sequential: step forward but skip any index already on screen
-            let next = (curr + 1) % L;
-            let safety = 0;
-            while (showing.has(next) && next !== curr && safety < L) {
-                next = (next + 1) % L;
-                safety++;
-            }
-            return next;
-        }
-
-        /* ===========================================
-           RENDERING
-        =========================================== */
-        function renderBox(n, idx) {
-            const box = document.getElementById('box-' + n);
-            const con = box.querySelector('.media-container');
-            const caption = box.querySelector('.photo-caption');
-
-            if (!S.mediaItems.length) {
-                con.innerHTML = '';
-                if (caption) caption.textContent = '';
-                return;
-            }
-            if (idx >= S.mediaItems.length) idx = idx % S.mediaItems.length;
-
-            const item = S.mediaItems[idx];
-
-            // Clean up orphaned fading-out elements (prevent DOM bloat)
-            const orphans = con.querySelectorAll('.media-item.fading-out');
-            orphans.forEach(o => o.remove());
-
-            // Also remove any stuck invisible items (no 'loaded' class, not the one we're about to add)
-            const stuckItems = con.querySelectorAll('.media-item:not(.loaded)');
-            stuckItems.forEach(s => s.remove());
-
-            // Crossfade: keep old element briefly
-            const oldEl = con.querySelector('.media-item.loaded');
-            if (oldEl) {
-                oldEl.classList.remove('loaded');
-                oldEl.classList.add('fading-out');
-                setTimeout(() => { if (oldEl.parentNode) oldEl.remove(); }, S.transitionDuration * 1000 + 200);
-            }
-
-            const el = document.createElement(item.type === 'video' ? 'video' : 'img');
-            el.className = 'media-item';
-            if (S.motionActive && item.type === 'image' && !document.hidden) el.classList.add('ken-burns');
-
-            // Pin color — stable per box
-            const pin = box.querySelector('.pin-handle');
-            if (pin && S.layoutMode === 3) {
-                if (!S.pinAssignments[n]) {
-                    // Try loading from saved cork first
-                    let saved = null;
-                    try { const d = JSON.parse(localStorage.getItem('cork_pins')); if (d && d[n]) saved = d[n]; } catch (e) { }
-                    S.pinAssignments[n] = saved || S.pinColors[Math.floor(Math.random() * S.pinColors.length)];
-                }
-                pin.className = 'pin-handle ' + S.pinAssignments[n];
-            }
-
-            // Caption from filename
-            if (caption && S.layoutMode === 3) {
-                let name = item.file?.name || item.id || '';
-                name = name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ').replace(/\d{8,}/g, '').trim();
-                if (name.length > 30) name = name.substring(0, 28) + '...';
-                caption.textContent = name || '';
-            }
-
-            const onLoad = () => {
-                el.classList.add('loaded');
-                const r = item.type === 'video'
-                    ? (el.videoWidth ? el.videoHeight / el.videoWidth : 1)
-                    : (el.naturalWidth ? el.naturalHeight / el.naturalWidth : 1);
-                S.loadedRatios[n] = r || 1;
-
-                if (S.layoutMode === 3) {
-                    if (S.autoArrangeActive) applySmartLayout();
-                    else {
-                        const w = parseInt(box.style.width) || 300;
-                        box.style.height = Math.round(w * r + 52) + 'px';
-                    }
-                    saveCork();
-                }
-            };
-
-            // Error handler: retry from IndexedDB, then skip on failure
-            let retried = false;
-            const onError = async () => {
-                if (!retried) {
-                    retried = true;
-                    console.warn(`Image load failed for box ${n}, retrying from IndexedDB...`);
-                    const freshFile = await retryFromDB(item.id);
-                    if (freshFile) {
-                        // Update the item's file reference
-                        item.file = freshFile;
-                        const newUrl = getItemUrl(n, item);
-                        if (newUrl) {
-                            el.src = newUrl;
-                            return;
-                        }
-                    }
-                }
-                // Permanent failure — remove broken element, advance to next photo
-                console.warn(`Permanent load failure for box ${n}, advancing to next photo`);
-                if (el.parentNode) el.remove();
-                S.indices[n - 1] = getNextIdx(S.indices[n - 1]);
-                setTimeout(() => renderBox(n, S.indices[n - 1]), 100);
-            };
-
-            if (item.type === 'video') {
-                el.loop = true; el.muted = true; el.autoplay = true;
-                el.playsInline = true; el.oncanplay = onLoad;
-                el.onerror = onError;
-            } else {
-                el.onload = onLoad;
-                el.onerror = onError;
-            }
-
-            const url = getItemUrl(n, item);
-            if (url) {
-                el.src = url;
-                con.appendChild(el);
-            } else {
-                // URL creation failed — try next photo immediately
-                S.indices[n - 1] = getNextIdx(S.indices[n - 1]);
-                setTimeout(() => renderBox(n, S.indices[n - 1]), 100);
-            }
-        }
-
-        /* Photo counter removed */
-
-        function refreshAll() {
-            const wrapper = document.getElementById('photo-wrapper');
-            wrapper.className = 'mode-' + S.layoutMode;
-
-            const sticky = document.getElementById('sticky-container');
-            const resetBtn = document.getElementById('btn-reset-pins');
-
-            if (S.layoutMode === 1) {
-                sticky.classList.add('hidden');
-            } else {
-                sticky.classList.remove('hidden');
-            }
-            resetBtn.style.display = S.layoutMode === 3 ? 'flex' : 'none';
-
-            renderBox(1, S.indices[0]);
-            const b2 = document.getElementById('box-2');
-            const b3 = document.getElementById('box-3');
-
-            if (S.layoutMode === 3) {
-                b2.style.display = 'flex'; b3.style.display = 'flex';
-                renderBox(2, S.indices[1]);
-                renderBox(3, S.indices[2]);
-                loadCork();
-                if (S.autoArrangeActive) setTimeout(applySmartLayout, 50);
-            } else {
-                b2.style.display = 'none'; b3.style.display = 'none';
-                revokeBoxUrl(2); revokeBoxUrl(3);
-            }
-
-            updateTimers(document.getElementById('timer-select').value);
-        }
-
-        /* ===========================================
-           TIMER LOGIC
-        =========================================== */
-        function updateTimers(val) {
-            S.timers.forEach(t => t && clearInterval(t));
-            S.timeouts.forEach(t => t && clearTimeout(t));
-            S.timers = [null, null, null];
-            S.timeouts = [null, null, null];
-            if (val === 'static' || !S.mediaItems.length) return;
-
-            const dur = parseInt(val, 10);
-            S.slideDuration = dur;
-
-            const advance = (boxNum, idxSlot) => {
-                if (!S.mediaItems.length) return;
-                S.indices[idxSlot] = getNextIdx(S.indices[idxSlot]);
-                renderBox(boxNum, S.indices[idxSlot]);
-            };
-
-            S.timers[0] = setInterval(() => advance(1, 0), dur);
-
-            if (S.layoutMode === 3) {
-                // Stagger the 3 boxes so they don't all flip at once
-                S.timeouts[1] = setTimeout(() => {
-                    advance(2, 1);
-                    S.timers[1] = setInterval(() => advance(2, 1), dur);
-                }, Math.round(dur * 0.33));
-
-                S.timeouts[2] = setTimeout(() => {
-                    advance(3, 2);
-                    S.timers[2] = setInterval(() => advance(3, 2), dur);
-                }, Math.round(dur * 0.66));
-            }
-        }
-
-        /* ===========================================
-           SMART LAYOUT ENGINE (The Big Fix)
-        =========================================== */
-        function applySmartLayout() {
-            if (S.layoutMode !== 3 || !S.autoArrangeActive) return;
-
-            const W = window.innerWidth;
-            const H = window.innerHeight;
-            const PAD_TOP = 12;
-            const PAD_BOTTOM = 150; // Bigger sticky notes need more room
-            const PAD_SIDE = 14;
-            const PB = 52; // Polaroid padding (10px top + 42px bottom)
-            const GAP = 12;
-
-            const usableW = W - PAD_SIDE * 2;
-            const usableH = H - PAD_TOP - PAD_BOTTOM;
-
-            const ratios = [S.loadedRatios[1] || 1, S.loadedRatios[2] || 1, S.loadedRatios[3] || 1];
-
-            // boxH(w, r) = w * r + PB
-            // photoArea(w, r) = w * w * r
-            const layouts = [];
-
-            // Helper: compute a layout variant and push it
-            function tryLayout(positions) {
-                let totalArea = 0;
-                let minArea = Infinity;
-                let valid = true;
-                for (let i = 0; i < 3; i++) {
-                    const p = positions[i];
-                    if (!p || p.w < 100) { valid = false; break; }
-                    const area = p.w * p.w * ratios[i];
-                    totalArea += area;
-                    if (area < minArea) minArea = area;
-                }
-                const score = (minArea * 5) + totalArea;
-                if (valid) layouts.push({ score, area: totalArea, positions });
-            }
-
-            // Clamp width so box doesn't overflow usable height
-            function maxW(r) { return Math.floor((usableH - PB) / Math.max(0.3, r)); }
-
-            // --- LAYOUT A: 3 columns side by side ---
-            {
-                let colW = Math.floor((usableW - GAP * 2) / 3);
-                // Clamp by tallest
-                for (let i = 0; i < 3; i++) colW = Math.min(colW, maxW(ratios[i]));
-                const offsetX = PAD_SIDE + Math.max(0, Math.floor((usableW - (colW * 3 + GAP * 2)) / 2));
-                const positions = [0, 1, 2].map(i => {
-                    const bh = colW * ratios[i] + PB;
-                    return {
-                        x: offsetX + i * (colW + GAP),
-                        y: PAD_TOP + Math.floor((usableH - bh) * 0.35),
-                        w: colW
-                    };
-                });
-                tryLayout(positions);
-            }
-
-            // --- LAYOUT B/C: 1 big + 2 stacked (try both sides, all 3 as "big") ---
-            for (const bigIdx of [0, 1, 2]) {
-                const others = [0, 1, 2].filter(i => i !== bigIdx);
-                const bR = ratios[bigIdx];
-                const s0R = ratios[others[0]];
-                const s1R = ratios[others[1]];
-
-                const splitTries = [
-                    Math.floor(usableW * 0.3),
-                    Math.floor(usableW * 0.4),
-                    Math.floor(usableW * 0.5)
-                ];
-
-                for (let target_sW of splitTries) {
-                    let bW = usableW - target_sW - GAP;
-                    bW = Math.min(bW, maxW(bR));
-
-                    const max_sW = Math.floor((usableH - PB * 2 - GAP) / (s0R + s1R));
-                    let sW = Math.min(target_sW, max_sW);
-
-                    // Re-expand bW/sW dynamically to eat up available width
-                    bW = Math.min(usableW - sW - GAP, maxW(bR));
-                    sW = Math.min(usableW - bW - GAP, max_sW);
-
-                    if (sW < 120 || bW < 120) continue;
-
-                    for (const bigOnLeft of [true, false]) {
-                        const bigH = bW * bR + PB;
-                        const s0H = sW * s0R + PB;
-                        const s1H = sW * s1R + PB;
-                        const stackTotalH = s0H + GAP + s1H;
-
-                        const bigY = PAD_TOP + Math.max(0, Math.floor((usableH - bigH) * 0.5));
-                        const sStartY = PAD_TOP + Math.max(0, Math.floor((usableH - stackTotalH) * 0.5));
-                        const offsetX = PAD_SIDE + Math.max(0, Math.floor((usableW - (bW + sW + GAP)) / 2));
-
-                        const positions = [];
-                        if (bigOnLeft) {
-                            positions[bigIdx] = { x: offsetX, y: bigY, w: bW };
-                            positions[others[0]] = { x: offsetX + bW + GAP, y: sStartY, w: sW };
-                            positions[others[1]] = { x: offsetX + bW + GAP, y: sStartY + s0H + GAP, w: sW };
-                        } else {
-                            positions[bigIdx] = { x: offsetX + sW + GAP, y: bigY, w: bW };
-                            positions[others[0]] = { x: offsetX, y: sStartY, w: sW };
-                            positions[others[1]] = { x: offsetX, y: sStartY + s0H + GAP, w: sW };
-                        }
-                        tryLayout(positions);
-                    }
-                }
-            }
-
-            // --- LAYOUT D: 2 on top row + 1 on bottom row ---
-            for (const botIdx of [0, 1, 2]) {
-                const tops = [0, 1, 2].filter(i => i !== botIdx);
-                const t0R = ratios[tops[0]];
-                const t1R = ratios[tops[1]];
-                const bR = ratios[botIdx];
-
-                const w0_balanced = Math.floor((usableW - GAP) * t1R / (t0R + t1R));
-                const splits = [
-                    { w0: w0_balanced, w1: usableW - GAP - w0_balanced },
-                    { w0: Math.floor((usableW - GAP) / 2), w1: Math.floor((usableW - GAP) / 2) }
-                ];
-
-                for (const split of splits) {
-                    let w0 = split.w0;
-                    let w1 = split.w1;
-
-                    let topH = Math.max(w0 * t0R, w1 * t1R) + PB;
-                    if (topH > usableH * 0.6) {
-                        const scale = (usableH * 0.6) / topH;
-                        w0 = Math.floor(w0 * scale);
-                        w1 = Math.floor(w1 * scale);
-                        topH = Math.max(w0 * t0R, w1 * t1R) + PB;
-                    }
-
-                    const botAvailH = usableH - topH - GAP;
-                    let bW = Math.min(usableW, Math.floor((botAvailH - PB) / bR));
-
-                    if (w0 < 120 || w1 < 120 || bW < 120) continue;
-
-                    const actTop1H = w0 * t0R + PB;
-                    const actTop2H = w1 * t1R + PB;
-
-                    const topOffsetX = PAD_SIDE + Math.max(0, Math.floor((usableW - (w0 + w1 + GAP)) / 2));
-                    const botOffsetX = PAD_SIDE + Math.max(0, Math.floor((usableW - bW) / 2));
-                    const totalBoxH = topH + GAP + bW * bR + PB;
-                    const startY = PAD_TOP + Math.max(0, Math.floor((usableH - totalBoxH) / 2));
-
-                    const positions = [];
-                    positions[tops[0]] = { x: topOffsetX, y: startY + (topH - actTop1H), w: w0 };
-                    positions[tops[1]] = { x: topOffsetX + w0 + GAP, y: startY + (topH - actTop2H), w: w1 };
-                    positions[botIdx] = { x: botOffsetX, y: startY + topH + GAP, w: bW };
-                    tryLayout(positions);
-                }
-            }
-
-            // --- LAYOUT E: 1 on top + 2 on bottom row ---
-            for (const topIdx of [0, 1, 2]) {
-                const bots = [0, 1, 2].filter(i => i !== topIdx);
-                const tR = ratios[topIdx];
-                const b0R = ratios[bots[0]];
-                const b1R = ratios[bots[1]];
-
-                const w0_balanced = Math.floor((usableW - GAP) * b1R / (b0R + b1R));
-                const splits = [
-                    { w0: w0_balanced, w1: usableW - GAP - w0_balanced },
-                    { w0: Math.floor((usableW - GAP) / 2), w1: Math.floor((usableW - GAP) / 2) }
-                ];
-
-                for (const split of splits) {
-                    let w0 = split.w0;
-                    let w1 = split.w1;
-
-                    let botH = Math.max(w0 * b0R, w1 * b1R) + PB;
-                    if (botH > usableH * 0.6) {
-                        const scale = (usableH * 0.6) / botH;
-                        w0 = Math.floor(w0 * scale);
-                        w1 = Math.floor(w1 * scale);
-                        botH = Math.max(w0 * b0R, w1 * b1R) + PB;
-                    }
-
-                    const topAvailH = usableH - botH - GAP;
-                    let tW = Math.min(usableW, Math.floor((topAvailH - PB) / tR));
-
-                    if (w0 < 120 || w1 < 120 || tW < 120) continue;
-
-                    const actBot1H = w0 * b0R + PB;
-                    const actBot2H = w1 * b1R + PB;
-                    const topActH = tW * tR + PB;
-
-                    const topOffsetX = PAD_SIDE + Math.max(0, Math.floor((usableW - tW) / 2));
-                    const botOffsetX = PAD_SIDE + Math.max(0, Math.floor((usableW - (w0 + w1 + GAP)) / 2));
-                    const totalBoxH = topActH + GAP + botH;
-                    const startY = PAD_TOP + Math.max(0, Math.floor((usableH - totalBoxH) / 2));
-
-                    const positions = [];
-                    positions[topIdx] = { x: topOffsetX, y: startY, w: tW };
-                    positions[bots[0]] = { x: botOffsetX, y: startY + topActH + GAP + (botH - actBot1H), w: w0 };
-                    positions[bots[1]] = { x: botOffsetX + w0 + GAP, y: startY + topActH + GAP + (botH - actBot2H), w: w1 };
-                    tryLayout(positions);
-                }
-            }
-
-            if (!layouts.length) return;
-
-            // Pick layout with maximum score (balancing minArea and totalArea)
-            layouts.sort((a, b) => b.score - a.score);
-            const best = layouts[0];
-
-            // Apply with slight organic rotation
-            [1, 2, 3].forEach((boxNum, i) => {
-                const b = document.getElementById('box-' + boxNum);
-                const pos = best.positions[i];
-                const r = ratios[i];
-                const h = Math.round(pos.w * r + PB);
-
-                // Clamp to screen bounds
-                const cx = Math.max(4, Math.min(W - pos.w - 4, pos.x));
-                const cy = Math.max(4, Math.min(H - h - 10, pos.y));
-
-                b.style.width = pos.w + 'px';
-                b.style.height = h + 'px';
-                b.style.left = cx + 'px';
-                b.style.top = cy + 'px';
-
-                // Subtle organic rotation
-                const rot = ((i * 1.7 + 0.5) % 4 - 2).toFixed(1);
-                b.style.transform = `rotate(${rot}deg)`;
-                b.style.zIndex = i + 1;
-            });
-
-            saveCork();
-        }
-
-        /* ===========================================
-           CORK PERSISTENCE
-        =========================================== */
-        function saveCork() {
-            if (S.layoutMode !== 3) return;
-            const d = {};
-            [1, 2, 3].forEach(i => {
-                const b = document.getElementById('box-' + i);
-                d[i] = {
-                    t: b.style.top, l: b.style.left,
-                    w: b.style.width, h: b.style.height,
-                    r: b.style.transform
-                };
-            });
-            localStorage.setItem('cork_layout', JSON.stringify(d));
-            // Save pin colors separately so they're stable
-            localStorage.setItem('cork_pins', JSON.stringify(S.pinAssignments));
-        }
-
-        function loadCork() {
-            if (S.autoArrangeActive) return; // Don't load saved positions if auto-arrange is on
-            try {
-                const d = JSON.parse(localStorage.getItem('cork_layout'));
-                if (!d) return;
-                [1, 2, 3].forEach(i => {
-                    if (!d[i]) return;
-                    const b = document.getElementById('box-' + i);
-                    b.style.top = d[i].t;
-                    b.style.left = d[i].l;
-                    b.style.width = d[i].w;
-                    b.style.height = d[i].h;
-                    b.style.transform = d[i].r;
-                });
-            } catch (e) { }
-            // Load pin colors
-            try {
-                const p = JSON.parse(localStorage.getItem('cork_pins'));
-                if (p) { S.pinAssignments[1] = p[1]; S.pinAssignments[2] = p[2]; S.pinAssignments[3] = p[3]; }
-            } catch (e) { }
-        }
-
-        /* ===========================================
-           WEATHER
-        =========================================== */
-        const WEATHER_ICONS = {
-            0: 'wb_sunny', 1: 'wb_sunny', 2: 'partly_cloudy_day', 3: 'cloud',
-            45: 'foggy', 48: 'foggy', 51: 'grain', 53: 'rainy', 55: 'rainy',
-            56: 'rainy', 57: 'rainy', 61: 'rainy', 63: 'rainy', 65: 'rainy',
-            66: 'rainy', 67: 'rainy', 71: 'ac_unit', 73: 'ac_unit', 75: 'ac_unit',
-            77: 'ac_unit', 80: 'rainy', 81: 'rainy', 82: 'rainy',
-            85: 'ac_unit', 86: 'ac_unit', 95: 'thunderstorm', 96: 'thunderstorm', 99: 'thunderstorm'
-        };
-
-        function weatherLabel(code) {
-            const map = {
-                0: 'Clear Skies', 1: 'Mostly Clear', 2: 'Partly Cloudy', 3: 'Overcast',
-                45: 'Foggy', 48: 'Rime Fog', 51: 'Light Drizzle', 53: 'Drizzle', 55: 'Heavy Drizzle',
-                61: 'Light Rain', 63: 'Rain', 65: 'Heavy Rain', 71: 'Light Snow', 73: 'Snow', 75: 'Heavy Snow',
-                77: 'Snow Grains', 80: 'Rain Showers', 81: 'Mod. Showers', 82: 'Heavy Showers',
-                85: 'Snow Showers', 95: 'Thunderstorm', 96: 'Hail Storm', 99: 'Severe Storm'
-            };
-            return map[code] || 'Weather';
-        }
-
-        async function updateWeather() {
-            try {
-                const url = `https://api.open-meteo.com/v1/forecast?latitude=${S.userLat}&longitude=${S.userLon}`
-                    + `&current_weather=true`
-                    + `&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode`
-                    + `&hourly=apparent_temperature,relativehumidity_2m,windspeed_10m`
-                    + `&temperature_unit=fahrenheit&windspeed_unit=mph&timezone=auto`
-                    + `&forecast_days=2`;
-                const r = await fetch(url);
-                const d = await r.json();
-                if (!d.current_weather) return;
-
-                const temp = Math.round(d.current_weather.temperature);
-                const code = d.current_weather.weathercode;
-                const isNight = d.current_weather.is_day === 0;
-                const wind = Math.round(d.current_weather.windspeed);
-
-                const nowHour = new Date().getHours();
-                const feelsLike = d.hourly?.apparent_temperature?.[nowHour]
-                    ? Math.round(d.hourly.apparent_temperature[nowHour]) : temp;
-                const humidity = d.hourly?.relativehumidity_2m?.[nowHour] || '--';
-
-                document.getElementById('temp').innerText = temp + '°';
-                document.getElementById('condition').innerText =
-                    (isNight && code <= 2) ? 'Clear Night' : weatherLabel(code);
-                document.getElementById('weather-icon').innerText =
-                    (isNight && code <= 2) ? 'bedtime' : (WEATHER_ICONS[code] || 'cloud');
-
-                const hi = Math.round(d.daily.temperature_2m_max[0]);
-                const lo = Math.round(d.daily.temperature_2m_min[0]);
-                const precip = d.daily.precipitation_probability_max?.[0] || 0;
-
-                // Today's details — all in the sticky
-                let details = `H ${hi}°  L ${lo}°`;
-                if (Math.abs(feelsLike - temp) >= 3) details += `  ·  Feels ${feelsLike}°`;
-                if (wind > 5) details += `  ·  ${wind} mph`;
-                if (precip > 15) details += `  ·  ${precip}% rain`;
-                document.getElementById('weather-details').innerText = details;
-
-                // Tomorrow's mini-forecast inside the sticky
-                const tmrwEl = document.getElementById('weather-tomorrow');
-                const hiTmrw = d.daily.temperature_2m_max[1] ? Math.round(d.daily.temperature_2m_max[1]) : null;
-                const loTmrw = d.daily.temperature_2m_min[1] ? Math.round(d.daily.temperature_2m_min[1]) : null;
-                const tmrwCode = d.daily.weathercode?.[1];
-                const tmrwPrecip = d.daily.precipitation_probability_max?.[1] || 0;
-
-                if (hiTmrw !== null && tmrwCode !== undefined) {
-                    let tmrw = `Tmrw: ${weatherLabel(tmrwCode)} ${hiTmrw}°/${loTmrw}°`;
-                    if (tmrwPrecip > 20) tmrw += ` · ${tmrwPrecip}%`;
-                    tmrwEl.innerText = tmrw;
-                } else {
-                    tmrwEl.innerText = '';
-                }
-
-            } catch (e) {
-                document.getElementById('weather-details').innerText = 'Unavailable';
-            }
-        }
-
-        /* ===========================================
-           BRIGHTNESS & WAKE LOCK
-        =========================================== */
-        function checkBrightness() {
-            const h = new Date().getHours();
-            const night = h >= 22 || h < 6;
-            const dimNight = h >= 23 || h < 5;
-            let bright = S.manualBright;
-            if (S.autoBright) {
-                if (dimNight) bright = Math.min(bright, 0.3);
-                else if (night) bright = Math.min(bright, 0.5);
-            }
-            document.body.style.filter = `brightness(${bright})`;
-        }
-
-        async function toggleWakeLock() {
-            if (S.wakeLock) {
-                try { await S.wakeLock.release(); } catch (e) { }
-                S.wakeLock = null;
-                return false;
-            }
-            try {
-                S.wakeLock = await navigator.wakeLock.request('screen');
-                S.wakeLock.addEventListener('release', () => { S.wakeLock = null; });
-                return true;
-            } catch (e) {
-                toast('Wake lock not supported');
-                return false;
-            }
-        }
-
-        /* ===========================================
-           SAVE/LOAD SETTINGS
-        =========================================== */
-        function saveSettings() {
-            const settings = {
-                layoutMode: S.layoutMode,
-                shuffleActive: S.shuffleActive,
-                motionActive: S.motionActive,
-                autoArrangeActive: S.autoArrangeActive,
-                autoBright: S.autoBright,
-                manualBright: S.manualBright,
-                slideDuration: S.slideDuration,
-                transitionDuration: S.transitionDuration
-            };
-            localStorage.setItem('frame_settings', JSON.stringify(settings));
-        }
-
-        function loadSettings() {
-            try {
-                const s = JSON.parse(localStorage.getItem('frame_settings'));
-                if (!s) return;
-                if (s.layoutMode !== undefined) S.layoutMode = s.layoutMode;
-                if (s.shuffleActive !== undefined) S.shuffleActive = s.shuffleActive;
-                if (s.motionActive !== undefined) S.motionActive = s.motionActive;
-                if (s.autoArrangeActive !== undefined) S.autoArrangeActive = s.autoArrangeActive;
-                if (s.autoBright !== undefined) S.autoBright = s.autoBright;
-                if (s.manualBright !== undefined) S.manualBright = s.manualBright;
-                if (s.slideDuration !== undefined) S.slideDuration = s.slideDuration;
-                if (s.transitionDuration !== undefined) S.transitionDuration = s.transitionDuration;
-            } catch (e) { }
-        }
-
-        /* ===========================================
-           UI SYNC - Keep buttons in sync with state
-        =========================================== */
-        function syncUI() {
-            const tag = (id) => document.getElementById(id).querySelector('.btn-tag');
-
-            tag('btn-shuffle').textContent = S.shuffleActive ? 'ON' : 'OFF';
-            document.getElementById('btn-shuffle').classList.toggle('btn-active', S.shuffleActive);
-
-            tag('btn-motion').textContent = S.motionActive ? 'ON' : 'OFF';
-            document.getElementById('btn-motion').classList.toggle('btn-active', S.motionActive);
-
-            tag('btn-auto-arrange').textContent = S.autoArrangeActive ? 'ON' : 'OFF';
-            document.getElementById('btn-auto-arrange').classList.toggle('btn-active', S.autoArrangeActive);
-
-            tag('btn-auto-bright').textContent = S.autoBright ? 'ON' : 'OFF';
-            document.getElementById('btn-auto-bright').classList.toggle('btn-active', S.autoBright);
-
-            tag('btn-layout').textContent = S.layoutMode === 1 ? 'SINGLE' : 'CORKBOARD';
-            tag('btn-rotate').textContent = (S.screenRotState * 90) + '°';
-
-            // Timer select
-            const timerSel = document.getElementById('timer-select');
-            const durStr = S.slideDuration.toString();
-            for (const opt of timerSel.options) {
-                if (opt.value === durStr) { timerSel.value = durStr; break; }
-            }
-
-            // Brightness slider
-            document.getElementById('brightness-slider').value = Math.round(S.manualBright * 100);
-            document.getElementById('bright-val').textContent = Math.round(S.manualBright * 100) + '%';
-
-            // Transition slider
-            document.getElementById('transition-slider').value = Math.round(S.transitionDuration * 10);
-            document.getElementById('trans-val').textContent = S.transitionDuration.toFixed(1) + 's';
-
-            document.documentElement.style.setProperty('--transition-photos', S.transitionDuration + 's');
-        }
-
-        /* ===========================================
-           TOAST
-        =========================================== */
-        function toast(msg) {
-            const el = document.getElementById('toast');
-            el.textContent = msg;
-            el.classList.add('show');
-            clearTimeout(el._timer);
-            el._timer = setTimeout(() => el.classList.remove('show'), 2500);
-        }
-
-        /* ===========================================
-           DRAG & RESIZE
-        =========================================== */
-        let drag = { el: null, res: false, down: false, sx: 0, sy: 0, sw: 0, sh: 0, st: 0, sl: 0 };
-
-        document.addEventListener('pointerdown', e => {
-            const p = e.target.closest('.pin-handle');
-            const r = e.target.closest('.resize-handle');
-            if (S.layoutMode !== 3 || (!p && !r)) return;
-
-            drag.el = (p || r).parentElement;
-            drag.res = !!r;
-            drag.down = true;
-            drag.sx = e.clientX; drag.sy = e.clientY;
-            drag.sw = drag.el.offsetWidth; drag.sh = drag.el.offsetHeight;
-            drag.st = drag.el.offsetTop; drag.sl = drag.el.offsetLeft;
-            drag.el.style.zIndex = 100;
-            drag.el.classList.add('dragging');
-
-            if (S.autoArrangeActive) {
-                S.autoArrangeActive = false;
-                syncUI(); saveSettings();
-                toast('Auto-arrange off — drag freely');
-            }
-            e.preventDefault();
-        });
-
-        document.addEventListener('pointermove', e => {
-            if (!drag.down || !drag.el) return;
-            const dx = e.clientX - drag.sx;
-            const dy = e.clientY - drag.sy;
-
-            if (drag.res) {
-                // Corner resize: scale proportionally
-                const nw = Math.max(120, drag.sw + dx);
-                const bn = parseInt(drag.el.querySelector('.media-container').dataset.box);
-                const r = S.loadedRatios[bn] || 1;
-                drag.el.style.width = nw + 'px';
-                drag.el.style.height = Math.round(nw * r + 52) + 'px';
-            } else {
-                drag.el.style.left = (drag.sl + dx) + 'px';
-                drag.el.style.top = (drag.st + dy) + 'px';
-            }
-        });
-
-        document.addEventListener('pointerup', () => {
-            if (drag.el) {
-                drag.el.style.zIndex = '';
-                drag.el.classList.remove('dragging');
-                saveCork();
-            }
-            drag.el = null; drag.down = false;
-        });
-
-        /* ===========================================
-           CLOCK TICK
-        =========================================== */
-        function clockTick() {
-            const now = new Date();
-            const tmrw = new Date(now);
-            tmrw.setDate(now.getDate() + 1);
-
-            // Time
-            const h = now.getHours();
-            const m = now.getMinutes().toString().padStart(2, '0');
-            const h12 = h % 12 || 12;
-            const ampm = h >= 12 ? 'PM' : 'AM';
-            document.getElementById('time-display').innerHTML = `${h12}:${m}<span id="ampm">${ampm}</span>`;
-
-            // Date line under time
-            document.getElementById('date-line').textContent =
-                now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-
-            // Agenda dates
-            document.getElementById('date-today').textContent = now.getDate();
-            document.getElementById('date-today-sub').textContent =
-                now.toLocaleDateString('en-US', { weekday: 'short' });
-
-            document.getElementById('date-tmrw').textContent = tmrw.getDate();
-            document.getElementById('date-tmrw-sub').textContent =
-                tmrw.toLocaleDateString('en-US', { weekday: 'short' });
-
-            if (S.autoBright) checkBrightness();
-        }
-
-        /* ===========================================
-           ROTATION
-        =========================================== */
-        function applyRot() {
-            const c = document.getElementById('container');
-            const d = S.screenRotState * 90;
-            const w = window.innerWidth, h = window.innerHeight;
-            if (d === 0) c.style.transform = 'none';
-            else if (d === 180) c.style.transform = 'rotate(180deg)';
-            else c.style.transform = `translate(${(w - h) / 2}px, ${(h - w) / 2}px) rotate(${d}deg)`;
-            setTimeout(applySmartLayout, 300);
-        }
-
-        /* ===========================================
-           BIND ALL UI
-        =========================================== */
-        function bindUI() {
-            const $ = id => document.getElementById(id);
-            const click = (id, fn) => $(id).addEventListener('click', fn);
-
-            // Settings toggle
-            click('settings-btn', () => {
-                S.settingsOpen = !S.settingsOpen;
-                $('settings-panel').classList.toggle('open', S.settingsOpen);
-                $('settings-btn').classList.toggle('active', S.settingsOpen);
-            });
-            click('btn-close-settings', () => {
-                S.settingsOpen = false;
-                $('settings-panel').classList.remove('open');
-                $('settings-btn').classList.remove('active');
-            });
-
-            // Widgets
-            click('time-widget', () => {
-                S.settingsOpen = !S.settingsOpen;
-                $('settings-panel').classList.toggle('open', S.settingsOpen);
-                $('settings-btn').classList.toggle('active', S.settingsOpen);
-            });
-            click('agenda-box', () => $('calendar-modal').classList.toggle('show'));
-            click('btn-close-cal', () => $('calendar-modal').classList.remove('show'));
-            click('weather-box', () => { updateWeather(); toast('Refreshing weather...'); });
-
-            // Photos
-            click('btn-upload', () => $('fileInput').click());
-            click('btn-clear', clearMemory);
-            $('fileInput').addEventListener('change', function () {
-                if (this.files.length) saveFilesToDB(this.files);
-            });
-
-            // Layout
-            click('btn-layout', () => {
-                S.layoutMode = S.layoutMode === 1 ? 3 : 1;
-                syncUI(); saveSettings(); refreshAll();
-            });
-            click('btn-auto-arrange', () => {
-                S.autoArrangeActive = !S.autoArrangeActive;
-                syncUI(); saveSettings();
-                if (S.autoArrangeActive) applySmartLayout();
-            });
-            click('btn-reset-pins', () => {
-                localStorage.removeItem('cork_layout');
-                localStorage.removeItem('cork_pins');
-                S.pinAssignments = { 1: null, 2: null, 3: null };
-                S.autoArrangeActive = true;
-                syncUI(); saveSettings(); refreshAll();
-                toast('Layout reset');
-            });
-
-            // Slideshow
-            click('btn-shuffle', () => {
-                S.shuffleActive = !S.shuffleActive;
-                syncUI(); saveSettings();
-            });
-            click('btn-motion', () => {
-                S.motionActive = !S.motionActive;
-                syncUI(); saveSettings(); refreshAll();
-            });
-            $('timer-select').addEventListener('change', e => {
-                const v = e.target.value;
-                S.slideDuration = v === 'static' ? v : parseInt(v, 10);
-                saveSettings();
-                updateTimers(v);
-            });
-
-            // Display
-            $('brightness-slider').addEventListener('input', e => {
-                S.manualBright = parseInt(e.target.value, 10) / 100;
-                $('bright-val').textContent = e.target.value + '%';
-                checkBrightness();
-                saveSettings();
-            });
-            $('transition-slider').addEventListener('input', e => {
-                S.transitionDuration = parseInt(e.target.value, 10) / 10;
-                $('trans-val').textContent = S.transitionDuration.toFixed(1) + 's';
-                document.documentElement.style.setProperty('--transition-photos', S.transitionDuration + 's');
-                saveSettings();
-            });
-            click('btn-auto-bright', () => {
-                S.autoBright = !S.autoBright;
-                syncUI(); saveSettings(); checkBrightness();
-            });
-            click('btn-screen-wake', async () => {
-                const on = await toggleWakeLock();
-                const tag = $('btn-screen-wake').querySelector('.btn-tag');
-                tag.textContent = S.wakeLock ? 'ON' : 'OFF';
-                $('btn-screen-wake').classList.toggle('btn-active', !!S.wakeLock);
-                toast(S.wakeLock ? 'Screen will stay on' : 'Screen wake released');
-            });
-
-            // Tools
-            click('btn-rotate', () => {
-                S.screenRotState = (S.screenRotState + 1) % 4;
-                syncUI(); applyRot();
-            });
-            click('btn-fullscreen', () => {
-                if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => { });
-                else document.exitFullscreen().catch(() => { });
-            });
-
-            // Click photos to advance
-            document.querySelectorAll('.media-container').forEach(mc => {
-                mc.addEventListener('click', () => {
-                    const n = parseInt(mc.dataset.box);
-                    if (!S.mediaItems.length) return;
-                    S.indices[n - 1] = getNextIdx(S.indices[n - 1]);
-                    renderBox(n, S.indices[n - 1]);
-                });
-            });
-
-            // Resize handler on window
-            let resizeTimer;
-            window.addEventListener('resize', () => {
-                clearTimeout(resizeTimer);
-                resizeTimer = setTimeout(() => {
-                    if (S.autoArrangeActive) applySmartLayout();
-                }, 200);
-            });
-
-            // Re-acquire wake lock on visibility change
-            document.addEventListener('visibilitychange', async () => {
-                if (document.visibilityState === 'visible' && S.wakeLock === null) {
-                    // Try to re-acquire if it was released
-                }
-            });
-        }
-
-        /* ===========================================
-           INIT
-        =========================================== */
-        async function init() {
-            loadSettings();
-            syncUI();
-            bindUI();
-            clockTick();
-            setInterval(clockTick, 1000);
-            checkBrightness();
-
-            await initDB();
-            await loadFromDB();
-
-            updateWeather();
-            setInterval(updateWeather, 600000); // Every 10 min
-        }
-
-        init();
-    </script>
-
-    <!-- Map Iframe Overlay -->
-    <div id="map-iframe-container"
-        style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:10000; background:#c89f74;">
-        <iframe src="map2.html" style="width:100%; height:100%; border:none;"></iframe>
     </div>
+  </div>
+
+  <!-- map iframe overlay -->
+  <div id="map-iframe-container">
+    <div class="map-close" id="map-close-btn"><span class="material-symbols-rounded">close</span></div>
+    <iframe id="map-iframe" src="about:blank"></iframe>
+  </div>
+
+  <!-- toast -->
+  <div id="toast"></div>
+
+</div>
+
+<script>
+/* ===========================================================
+   ADAM'S CORK FRAME · v2 · main script
+   =========================================================== */
+
+(() => {
+  'use strict';
+
+  // ---------- State ----------
+  const STATE = {
+    photos: [],            // [{ id, blob?, url, caption, location, date, source }]
+    activeMode: 3,
+    settings: load('frame-settings', {
+      mode: 3,
+      brightness: 100,
+      transitionSec: 0.9,
+      cycleSec: 14,
+      corkCount: 5,
+      strings: true,
+      tape: true,
+      screenWake: false,
+      ghOwner: '',
+      ghRepo: '',
+      ghPath: 'photos',
+      ghBranch: 'main',
+      lastSync: 0,
+      location: { lat: 35.5951, lon: -82.5515, label: 'Asheville, NC' }
+    }),
+    rotationIndex: 0,
+    cycleTimer: null,
+    wakeLock: null,
+    db: null,
+    syncing: false
+  };
+
+  // ---------- Util ----------
+  function $(s, root=document) { return root.querySelector(s); }
+  function $$(s, root=document) { return Array.from(root.querySelectorAll(s)); }
+  function load(k, fallback) {
+    try { const v = JSON.parse(localStorage.getItem(k)); return v || fallback; }
+    catch { return fallback; }
+  }
+  function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+  function saveSettings() { save('frame-settings', STATE.settings); }
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+  function toast(msg, ms=2400) {
+    const t = $('#toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => t.classList.remove('show'), ms);
+  }
+
+  // ---------- IndexedDB for photo cache ----------
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open('frame-photos', 2);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('photos')) {
+          const store = db.createObjectStore('photos', { keyPath: 'id' });
+          store.createIndex('source', 'source', { unique: false });
+        }
+        if (!db.objectStoreNames.contains('meta')) {
+          db.createObjectStore('meta', { keyPath: 'k' });
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async function dbAll(storeName='photos') {
+    const tx = STATE.db.transaction(storeName, 'readonly');
+    const store = tx.objectStore(storeName);
+    return new Promise((resolve, reject) => {
+      const req = store.getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async function dbPut(rec, storeName='photos') {
+    const tx = STATE.db.transaction(storeName, 'readwrite');
+    tx.objectStore(storeName).put(rec);
+    return new Promise((resolve, reject) => {
+      tx.oncomplete = resolve; tx.onerror = () => reject(tx.error);
+    });
+  }
+  async function dbClear(storeName='photos') {
+    const tx = STATE.db.transaction(storeName, 'readwrite');
+    tx.objectStore(storeName).clear();
+    return new Promise((resolve, reject) => {
+      tx.oncomplete = resolve; tx.onerror = () => reject(tx.error);
+    });
+  }
+  async function dbDeleteBySource(source) {
+    const tx = STATE.db.transaction('photos', 'readwrite');
+    const store = tx.objectStore('photos');
+    const idx = store.index('source');
+    return new Promise((resolve, reject) => {
+      const cursorReq = idx.openCursor(IDBKeyRange.only(source));
+      cursorReq.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) { cursor.delete(); cursor.continue(); }
+      };
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  async function loadPhotosFromDB() {
+    const all = await dbAll('photos');
+    STATE.photos = all.map(rec => ({
+      ...rec,
+      url: rec.blob ? URL.createObjectURL(rec.blob) : rec.url
+    }));
+    updateStorageStatus();
+  }
+
+  async function updateStorageStatus() {
+    const el = $('#storage-status');
+    const n = STATE.photos.length;
+    let bytes = 0;
+    if (navigator.storage && navigator.storage.estimate) {
+      try { const est = await navigator.storage.estimate(); bytes = est.usage || 0; } catch {}
+    }
+    el.textContent = n
+      ? `${n} photo${n===1?'':'s'} cached · ${(bytes/1024/1024).toFixed(1)} MB used`
+      : 'No photos yet — sync from GitHub or load a folder';
+  }
+
+  // ---------- GitHub sync ----------
+  function tryAutoFillGitHubFromUrl() {
+    // Auto-fill repo/owner if hosted on GitHub Pages
+    const host = window.location.hostname;
+    const path = window.location.pathname;
+    if (host.endsWith('.github.io')) {
+      const owner = host.split('.')[0];
+      const parts = path.split('/').filter(Boolean);
+      const repo = parts[0] || '';
+      if (!STATE.settings.ghOwner) STATE.settings.ghOwner = owner;
+      if (!STATE.settings.ghRepo)  STATE.settings.ghRepo  = repo;
+    }
+  }
+
+  async function ghFetch(url) {
+    const r = await fetch(url, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
+    if (!r.ok) throw new Error(`GitHub ${r.status}: ${r.statusText}`);
+    return r.json();
+  }
+
+  async function syncFromGitHub() {
+    if (STATE.syncing) return;
+    const { ghOwner, ghRepo, ghPath, ghBranch } = STATE.settings;
+    if (!ghOwner || !ghRepo) { toast('Set GitHub username and repo first'); return; }
+    const path = ghPath || 'photos';
+    const branch = ghBranch || 'main';
+    setSyncStatus('syncing', 'Syncing…');
+    STATE.syncing = true;
+
+    try {
+      // 1) Fetch the photos folder listing
+      const apiUrl = `https://api.github.com/repos/${encodeURIComponent(ghOwner)}/${encodeURIComponent(ghRepo)}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
+      const listing = await ghFetch(apiUrl);
+      const imageExts = /\.(jpe?g|png|gif|webp|avif|heic|bmp)$/i;
+      const items = (Array.isArray(listing) ? listing : []).filter(f => f.type === 'file' && imageExts.test(f.name));
+      if (items.length === 0) {
+        setSyncStatus('warn', 'Folder is empty');
+        toast(`No images found in /${path}`);
+        STATE.syncing = false;
+        return;
+      }
+
+      // 2) Try to fetch optional photos.json metadata
+      let meta = {};
+      try {
+        const metaUrl = `https://raw.githubusercontent.com/${encodeURIComponent(ghOwner)}/${encodeURIComponent(ghRepo)}/${encodeURIComponent(branch)}/photos.json`;
+        const r = await fetch(metaUrl);
+        if (r.ok) {
+          const json = await r.json();
+          // Index by filename
+          if (Array.isArray(json.photos)) {
+            json.photos.forEach(p => { if (p.file) meta[p.file] = p; });
+          }
+        }
+      } catch {}
+
+      // 3) Clear previous github-sourced cache
+      await dbDeleteBySource('github');
+
+      // 4) Download each photo into IndexedDB as a Blob
+      let done = 0;
+      for (const f of items) {
+        try {
+          const r = await fetch(f.download_url);
+          if (!r.ok) continue;
+          const blob = await r.blob();
+          const m = meta[f.name] || {};
+          const rec = {
+            id: 'gh:' + f.sha,
+            blob,
+            source: 'github',
+            file: f.name,
+            caption: m.caption || '',
+            location: m.location || '',
+            date: m.date || '',
+            order: typeof m.order === 'number' ? m.order : null,
+            sha: f.sha
+          };
+          await dbPut(rec);
+          done++;
+          setSyncStatus('syncing', `Downloading ${done}/${items.length}…`);
+        } catch (e) {
+          console.warn('Failed to download', f.name, e);
+        }
+      }
+
+      STATE.settings.lastSync = Date.now();
+      saveSettings();
+      await loadPhotosFromDB();
+      renderCorkBoard();
+      setSyncStatus('ok', `Synced ${done} photo${done===1?'':'s'}`);
+      setTimeout(() => $('#sync-status').classList.remove('visible'), 4000);
+      toast(`Synced ${done} photos from GitHub`);
+    } catch (e) {
+      console.error(e);
+      setSyncStatus('error', e.message || 'Sync failed');
+      toast('Sync failed: ' + (e.message || 'unknown'));
+    } finally {
+      STATE.syncing = false;
+    }
+  }
+
+  function setSyncStatus(cls, text) {
+    const el = $('#sync-status');
+    el.classList.remove('syncing','error','ok');
+    if (cls) el.classList.add(cls);
+    $('#sync-text').textContent = text;
+    el.classList.add('visible');
+  }
+
+  function updateGitHubStatus() {
+    const el = $('#github-status');
+    const { ghOwner, ghRepo, ghPath, ghBranch, lastSync } = STATE.settings;
+    if (!ghOwner || !ghRepo) {
+      el.textContent = 'Not configured. Enter your GitHub username and repo above.';
+      el.className = '';
+      return;
+    }
+    const last = lastSync ? new Date(lastSync).toLocaleString() : 'never';
+    el.textContent = `Repo: ${ghOwner}/${ghRepo}@${ghBranch||'main'} → /${ghPath||'photos'}\nLast sync: ${last}`;
+    el.className = 'ok';
+  }
+
+  // ---------- Local folder load ----------
+  function loadLocalFolder(files) {
+    const imgs = Array.from(files).filter(f => /^(image|video)\//.test(f.type));
+    if (imgs.length === 0) { toast('No images found in folder'); return; }
+    setSyncStatus('syncing', `Importing ${imgs.length}…`);
+
+    (async () => {
+      // Clear existing local-sourced photos
+      await dbDeleteBySource('local');
+      let done = 0;
+      for (const f of imgs) {
+        try {
+          const rec = {
+            id: 'local:' + f.name + ':' + f.size + ':' + (f.lastModified || 0),
+            blob: f,
+            source: 'local',
+            file: f.name,
+            caption: '',
+            location: '',
+            date: f.lastModifiedDate ? f.lastModifiedDate.toISOString().slice(0,10) : '',
+            order: null
+          };
+          await dbPut(rec);
+          done++;
+        } catch (e) { console.warn(e); }
+      }
+      await loadPhotosFromDB();
+      renderCorkBoard();
+      setSyncStatus('ok', `Loaded ${done} from folder`);
+      setTimeout(() => $('#sync-status').classList.remove('visible'), 3500);
+      toast(`Loaded ${done} photos from folder`);
+    })();
+  }
+
+  // ---------- Cork board rendering ----------
+  const PIN_COLORS = ['pin-red','pin-blue','pin-green','pin-yellow','pin-purple','pin-white','pin-orange','pin-teal'];
+  const TAPE_COLORS = ['tape-mint','tape-pink','tape-blue','tape-kraft'];
+
+  /**
+   * Slot positions (percent of viewport) for cork-board mode.
+   * Designed for landscape 16:10 (Galaxy Tab S7+) — leaves bottom ~24% for sticky widgets.
+   */
+  function generateCorkSlots(count, vw, vh) {
+    // Predefined nice layouts per count
+    const presets = {
+      3: [
+        { x: 20, y: 28, w: 22, h: 36, rot: -3.4, style: 'polaroid', clip: false, tape: true },
+        { x: 50, y: 22, w: 24, h: 38, rot: 2.1,  style: 'square',   clip: true,  tape: false },
+        { x: 78, y: 30, w: 20, h: 34, rot: -2.0, style: 'polaroid', clip: false, tape: true }
+      ],
+      4: [
+        { x: 17, y: 22, w: 20, h: 34, rot: -3.8, style: 'polaroid', clip: false, tape: true },
+        { x: 42, y: 28, w: 19, h: 30, rot: 2.6,  style: 'square',   clip: true,  tape: false },
+        { x: 65, y: 20, w: 21, h: 36, rot: -1.4, style: 'polaroid', clip: false, tape: false },
+        { x: 84, y: 32, w: 17, h: 28, rot: 3.5,  style: 'polaroid', clip: true,  tape: true }
+      ],
+      5: [
+        { x: 14, y: 18, w: 18, h: 32, rot: -4.5, style: 'polaroid', clip: false, tape: true },
+        { x: 35, y: 28, w: 17, h: 28, rot: 2.0,  style: 'square',   clip: true,  tape: false },
+        { x: 54, y: 16, w: 19, h: 34, rot: -1.6, style: 'polaroid', clip: false, tape: false },
+        { x: 74, y: 30, w: 16, h: 26, rot: 4.2,  style: 'square',   clip: true,  tape: true },
+        { x: 89, y: 18, w: 14, h: 28, rot: -2.8, style: 'polaroid', clip: false, tape: true }
+      ],
+      6: [
+        { x: 12, y: 16, w: 17, h: 28, rot: -4.0, style: 'polaroid', clip: false, tape: true },
+        { x: 30, y: 30, w: 16, h: 26, rot: 2.4,  style: 'square',   clip: true,  tape: false },
+        { x: 47, y: 14, w: 17, h: 30, rot: -1.8, style: 'polaroid', clip: false, tape: false },
+        { x: 64, y: 30, w: 16, h: 26, rot: 3.4,  style: 'square',   clip: true,  tape: true },
+        { x: 80, y: 14, w: 16, h: 28, rot: -3.2, style: 'polaroid', clip: false, tape: true },
+        { x: 91, y: 32, w: 13, h: 22, rot: 4.5,  style: 'polaroid', clip: true,  tape: false }
+      ],
+      7: [
+        { x: 11, y: 14, w: 15, h: 26, rot: -4.2, style: 'polaroid', clip: false, tape: true },
+        { x: 26, y: 30, w: 14, h: 22, rot: 2.0,  style: 'square',   clip: true,  tape: false },
+        { x: 41, y: 14, w: 15, h: 26, rot: -1.4, style: 'polaroid', clip: false, tape: false },
+        { x: 55, y: 30, w: 13, h: 22, rot: 3.6,  style: 'square',   clip: true,  tape: true },
+        { x: 69, y: 14, w: 15, h: 26, rot: -2.8, style: 'polaroid', clip: false, tape: true },
+        { x: 83, y: 30, w: 13, h: 22, rot: 4.2,  style: 'polaroid', clip: true,  tape: false },
+        { x: 92, y: 14, w: 12, h: 22, rot: -3.6, style: 'square',   clip: false, tape: true }
+      ],
+      8: [
+        { x: 10, y: 12, w: 14, h: 24, rot: -4.4, style: 'polaroid', clip: false, tape: true },
+        { x: 24, y: 28, w: 13, h: 20, rot: 2.0,  style: 'square',   clip: true,  tape: false },
+        { x: 38, y: 12, w: 14, h: 24, rot: -1.8, style: 'polaroid', clip: false, tape: false },
+        { x: 52, y: 28, w: 13, h: 20, rot: 3.6,  style: 'square',   clip: true,  tape: true },
+        { x: 66, y: 12, w: 14, h: 24, rot: -2.8, style: 'polaroid', clip: false, tape: true },
+        { x: 79, y: 28, w: 13, h: 20, rot: 4.2,  style: 'polaroid', clip: true,  tape: false },
+        { x: 91, y: 12, w: 12, h: 22, rot: -3.6, style: 'square',   clip: false, tape: true },
+        { x: 95, y: 32, w: 10, h: 18, rot: 5.0,  style: 'polaroid', clip: true,  tape: false }
+      ],
+      9: [
+        { x: 10, y: 10, w: 13, h: 22, rot: -4.4, style: 'polaroid', clip: false, tape: true },
+        { x: 22, y: 26, w: 12, h: 18, rot: 2.0,  style: 'square',   clip: true,  tape: false },
+        { x: 35, y: 10, w: 13, h: 22, rot: -1.6, style: 'polaroid', clip: false, tape: false },
+        { x: 48, y: 26, w: 12, h: 18, rot: 3.6,  style: 'square',   clip: true,  tape: true },
+        { x: 60, y: 10, w: 13, h: 22, rot: -2.8, style: 'polaroid', clip: false, tape: true },
+        { x: 72, y: 26, w: 12, h: 18, rot: 4.2,  style: 'polaroid', clip: true,  tape: false },
+        { x: 84, y: 10, w: 12, h: 20, rot: -3.6, style: 'square',   clip: false, tape: true },
+        { x: 92, y: 28, w: 11, h: 18, rot: 5.0,  style: 'polaroid', clip: true,  tape: false },
+        { x: 96, y: 12, w: 10, h: 18, rot: -2.4, style: 'polaroid', clip: false, tape: true }
+      ]
+    };
+    return presets[Math.max(3, Math.min(9, count))] || presets[5];
+  }
+
+  function renderCorkBoard() {
+    const wrapper = $('#photo-wrapper');
+    wrapper.innerHTML = '';
+    if (STATE.activeMode === 1) { renderFullscreen(); return; }
+    if (STATE.photos.length === 0) { renderEmptyState(); return; }
+
+    const slots = generateCorkSlots(STATE.settings.corkCount);
+    const photos = pickPhotosForBoard(slots.length);
+
+    slots.forEach((slot, i) => {
+      const photo = photos[i];
+      if (!photo) return;
+      const box = createPhotoBox(photo, slot, i);
+      wrapper.appendChild(box);
+    });
+
+    drawStrings(slots);
+    if (STATE.cycleTimer) { clearInterval(STATE.cycleTimer); }
+    STATE.cycleTimer = setInterval(rotateOnePhoto, STATE.settings.cycleSec * 1000);
+  }
+
+  function pickPhotosForBoard(n) {
+    if (STATE.photos.length === 0) return [];
+    // Prefer photos.json order if all photos have order field, else shuffle
+    const ordered = STATE.photos.slice().sort((a,b) => {
+      if (a.order != null && b.order != null) return a.order - b.order;
+      return 0;
+    });
+    const shuffled = shuffle(ordered);
+    return shuffled.slice(0, n);
+  }
+
+  function createPhotoBox(photo, slot, idx) {
+    const box = document.createElement('div');
+    box.className = 'img-box style-' + slot.style;
+    box.style.left   = slot.x + '%';
+    box.style.top    = slot.y + '%';
+    box.style.width  = slot.w + 'vw';
+    box.style.height = slot.h + 'vh';
+    box.style.transform = `translate(-50%, -50%) rotate(${slot.rot}deg)`;
+    box.dataset.slotIdx = idx;
+
+    // Pin
+    const pin = document.createElement('div');
+    pin.className = 'pin-handle ' + pick(PIN_COLORS);
+    box.appendChild(pin);
+
+    // Optional washi tape
+    if (slot.tape && STATE.settings.tape) {
+      const tape = document.createElement('div');
+      tape.className = 'photo-tape ' + pick(TAPE_COLORS);
+      box.appendChild(tape);
+    }
+
+    // Optional paper clip
+    if (slot.clip) {
+      const clip = document.createElement('div');
+      clip.className = 'photo-clip';
+      clip.innerHTML = `<svg viewBox="0 0 22 50" xmlns="http://www.w3.org/2000/svg">
+        <path d="M11 4 C 4 4, 4 14, 11 14 L 11 38 C 11 46, 19 46, 19 38 L 19 12 C 19 6, 13 6, 13 12 L 13 36"
+              fill="none" stroke="#c0c0c8" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M11 4 C 4 4, 4 14, 11 14 L 11 38 C 11 46, 19 46, 19 38 L 19 12 C 19 6, 13 6, 13 12 L 13 36"
+              fill="none" stroke="#fff" stroke-width="0.6" stroke-linecap="round" opacity="0.7"
+              transform="translate(-0.5,-0.5)"/>
+      </svg>`;
+      box.appendChild(clip);
+    }
+
+    // Media container
+    const media = document.createElement('div');
+    media.className = 'media-container';
+    const img = document.createElement('img');
+    img.className = 'media-item ken-burns';
+    img.src = photo.url;
+    img.alt = photo.caption || '';
+    img.onload = () => img.classList.add('loaded');
+    img.onerror = () => { box.style.display = 'none'; };
+    media.appendChild(img);
+    box.appendChild(media);
+
+    // Caption
+    if (slot.style !== 'square') {
+      const cap = document.createElement('div');
+      cap.className = 'photo-caption';
+      cap.textContent = photo.caption || photo.location || '';
+      box.appendChild(cap);
+    }
+
+    return box;
+  }
+
+  function renderFullscreen() {
+    const wrapper = $('#photo-wrapper');
+    wrapper.innerHTML = '';
+    const photo = STATE.photos[STATE.rotationIndex % Math.max(STATE.photos.length, 1)];
+    if (!photo) { renderEmptyState(); return; }
+    const box = document.createElement('div');
+    box.className = 'img-box';
+    const media = document.createElement('div');
+    media.className = 'media-container';
+    const img = document.createElement('img');
+    img.className = 'media-item ken-burns';
+    img.src = photo.url;
+    img.onload = () => img.classList.add('loaded');
+    media.appendChild(img);
+    box.appendChild(media);
+    wrapper.appendChild(box);
+
+    if (STATE.cycleTimer) clearInterval(STATE.cycleTimer);
+    STATE.cycleTimer = setInterval(() => {
+      STATE.rotationIndex++;
+      renderFullscreen();
+    }, STATE.settings.cycleSec * 1000);
+  }
+
+  function renderEmptyState() {
+    const wrapper = $('#photo-wrapper');
+    wrapper.innerHTML = `
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+                  background:rgba(255,253,245,0.95);padding:30px 40px;border-radius:4px;
+                  box-shadow:0 8px 30px rgba(0,0,0,0.3);
+                  font-family:'Caveat',cursive;font-size:1.6rem;color:#5a3a18;
+                  text-align:center;max-width:60%;rotate:-1.5deg">
+        <div style="font-family:'Permanent Marker',cursive;font-size:1.6rem;margin-bottom:8px;color:#3a2010">No photos yet!</div>
+        <div>Tap the gear → "Sync from GitHub" or "Load Folder"</div>
+      </div>`;
+  }
+
+  function rotateOnePhoto() {
+    if (STATE.activeMode !== 3) return;
+    if (STATE.photos.length < 2) return;
+    const wrapper = $('#photo-wrapper');
+    const boxes = $$('.img-box', wrapper);
+    if (boxes.length === 0) return;
+    const targetBox = boxes[STATE.rotationIndex % boxes.length];
+    STATE.rotationIndex++;
+
+    // Pick a photo not currently shown
+    const shown = boxes.map(b => b.querySelector('img').src);
+    const candidates = STATE.photos.filter(p => !shown.includes(p.url));
+    if (candidates.length === 0) return;
+    const next = pick(candidates);
+
+    // Crossfade swap
+    const oldImg = targetBox.querySelector('img.media-item');
+    const newImg = document.createElement('img');
+    newImg.className = 'media-item ken-burns';
+    newImg.src = next.url;
+    newImg.style.position = 'absolute';
+    newImg.style.top = '0'; newImg.style.left = '0';
+    newImg.style.width = '100%'; newImg.style.height = '100%';
+    newImg.onload = () => {
+      newImg.classList.add('loaded');
+      oldImg.classList.add('fading-out');
+      setTimeout(() => {
+        if (oldImg.parentNode) oldImg.parentNode.removeChild(oldImg);
+      }, 1200);
+    };
+    targetBox.querySelector('.media-container').appendChild(newImg);
+
+    // Update caption if any
+    const cap = targetBox.querySelector('.photo-caption');
+    if (cap) cap.textContent = next.caption || next.location || '';
+  }
+
+  // ---------- Strings (decorative SVG) ----------
+  function drawStrings(slots) {
+    if (!STATE.settings.strings || STATE.activeMode !== 3 || slots.length < 2) {
+      $('#string-svg').innerHTML = '';
+      return;
+    }
+    const svg = $('#string-svg');
+    svg.setAttribute('viewBox', '0 0 100 100');
+    svg.setAttribute('preserveAspectRatio', 'none');
+    let lines = '';
+    // Connect a couple of nearby polaroids with a soft string
+    for (let i = 0; i < slots.length - 1; i++) {
+      const a = slots[i], b = slots[i+1];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > 30) continue; // skip far ones
+      // Bezier midpoint with sag
+      const mx = (a.x + b.x) / 2;
+      const my = (a.y + b.y) / 2 + 2 + Math.random() * 3;
+      lines += `<path d="M ${a.x} ${a.y} Q ${mx} ${my} ${b.x} ${b.y}"
+                stroke="rgba(60,38,18,0.55)" stroke-width="0.18" fill="none"
+                stroke-linecap="round" stroke-dasharray="0.5 0.5" />`;
+    }
+    svg.innerHTML = lines;
+  }
+
+  // ---------- Time / Agenda widget ----------
+  function updateClock() {
+    const now = new Date();
+    const h = now.getHours();
+    const m = now.getMinutes();
+    const ampm = h >= 12 ? 'pm' : 'am';
+    const h12 = ((h + 11) % 12) + 1;
+    $('#time-display').textContent = `${h12}:${String(m).padStart(2,'0')}`;
+    $('#ampm').textContent = ampm;
+
+    const opts = { weekday: 'long', month: 'short', day: 'numeric' };
+    $('#date-line').textContent = now.toLocaleDateString(undefined, opts).toLowerCase();
+
+    // Agenda: 3 days
+    const dayLabels = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(now);
+      d.setDate(now.getDate() + i);
+      const lbl = i === 0 ? 'today' : i === 1 ? 'tom.' : dayLabels[d.getDay()].toLowerCase();
+      $(`#agenda-d${i+1}-label`).textContent = lbl;
+      $(`#agenda-d${i+1}-date`).textContent = d.getDate();
+      $(`#agenda-d${i+1}-sub`).textContent = months[d.getMonth()].toLowerCase();
+    }
+  }
+
+  // ---------- Weather (Open-Meteo, no API key) ----------
+  const WEATHER_ICONS = {
+    0: 'wb_sunny', 1: 'wb_sunny', 2: 'partly_cloudy_day', 3: 'cloud',
+    45: 'foggy', 48: 'foggy',
+    51: 'rainy_light', 53: 'rainy', 55: 'rainy',
+    61: 'rainy', 63: 'rainy', 65: 'thunderstorm',
+    71: 'cloudy_snowing', 73: 'cloudy_snowing', 75: 'snowing',
+    80: 'rainy', 81: 'rainy', 82: 'rainy_heavy',
+    95: 'thunderstorm', 96: 'thunderstorm', 99: 'thunderstorm'
+  };
+  const WEATHER_TEXT = {
+    0: 'Clear', 1: 'Mostly clear', 2: 'Partly cloudy', 3: 'Overcast',
+    45: 'Foggy', 48: 'Foggy',
+    51: 'Light drizzle', 53: 'Drizzle', 55: 'Heavy drizzle',
+    61: 'Light rain', 63: 'Rain', 65: 'Heavy rain',
+    71: 'Light snow', 73: 'Snow', 75: 'Heavy snow',
+    80: 'Showers', 81: 'Showers', 82: 'Heavy showers',
+    95: 'Thunderstorm', 96: 'Thunderstorm', 99: 'Severe thunder'
+  };
+  async function updateWeather() {
+    const { lat, lon, label } = STATE.settings.location;
+    try {
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto`;
+      const r = await fetch(url);
+      if (!r.ok) throw new Error('weather');
+      const j = await r.json();
+      const c = j.current;
+      const code = c.weather_code;
+      $('#temp').textContent = Math.round(c.temperature_2m) + '°';
+      $('#condition').textContent = WEATHER_TEXT[code] || '—';
+      $('#weather-icon').textContent = WEATHER_ICONS[code] || 'cloud';
+      $('#weather-details').innerHTML =
+        `${label} · feels ${Math.round(c.apparent_temperature)}°<br>` +
+        `humidity ${c.relative_humidity_2m}% · wind ${Math.round(c.wind_speed_10m)} mph`;
+      const d = j.daily;
+      $('#weather-tomorrow').textContent =
+        `tomorrow · ${WEATHER_TEXT[d.weather_code[1]] || '—'} · ` +
+        `${Math.round(d.temperature_2m_min[1])}° / ${Math.round(d.temperature_2m_max[1])}°`;
+    } catch (e) {
+      $('#condition').textContent = 'weather offline';
+    }
+  }
+
+  // ---------- Geocode (location set) ----------
+  async function geocode(query) {
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`;
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('geocode');
+    const j = await r.json();
+    const hit = (j.results && j.results[0]);
+    if (!hit) return null;
+    return { lat: hit.latitude, lon: hit.longitude, label: `${hit.name}, ${hit.admin1 || hit.country_code || ''}`.trim() };
+  }
+
+  // ---------- Settings UI binding ----------
+  function bindSettings() {
+    // Open/close
+    $('#settings-btn').addEventListener('click', () => {
+      $('#settings-panel').classList.toggle('open');
+      $('#settings-btn').classList.toggle('active');
+    });
+    $('#btn-close-settings').addEventListener('click', () => {
+      $('#settings-panel').classList.remove('open');
+      $('#settings-btn').classList.remove('active');
+    });
+
+    // Modes
+    $('#btn-mode-3').addEventListener('click', () => setMode(3));
+    $('#btn-mode-1').addEventListener('click', () => setMode(1));
+
+    // GitHub fields
+    const f = STATE.settings;
+    $('#gh-owner').value  = f.ghOwner;
+    $('#gh-repo').value   = f.ghRepo;
+    $('#gh-path').value   = f.ghPath;
+    $('#gh-branch').value = f.ghBranch;
+    ['gh-owner','gh-repo','gh-path','gh-branch'].forEach(id => {
+      $('#'+id).addEventListener('change', () => {
+        STATE.settings.ghOwner  = $('#gh-owner').value.trim();
+        STATE.settings.ghRepo   = $('#gh-repo').value.trim();
+        STATE.settings.ghPath   = $('#gh-path').value.trim() || 'photos';
+        STATE.settings.ghBranch = $('#gh-branch').value.trim() || 'main';
+        saveSettings();
+        updateGitHubStatus();
+      });
+    });
+    $('#btn-gh-sync').addEventListener('click', syncFromGitHub);
+
+    // Local upload
+    $('#btn-upload').addEventListener('click', () => $('#fileInput').click());
+    $('#fileInput').addEventListener('change', (e) => {
+      if (e.target.files && e.target.files.length) loadLocalFolder(e.target.files);
+    });
+    $('#btn-clear').addEventListener('click', async () => {
+      if (!confirm('Clear all cached photos?')) return;
+      await dbClear('photos');
+      STATE.photos = [];
+      renderCorkBoard();
+      updateStorageStatus();
+      toast('Photo cache cleared');
+    });
+
+    // Sliders
+    bindSlider('#cork-count-slider', '#cork-count-val', 'corkCount', v => v, () => renderCorkBoard());
+    bindSlider('#cycle-slider', '#cycle-val', 'cycleSec', v => v + 's', () => {
+      if (STATE.cycleTimer) clearInterval(STATE.cycleTimer);
+      STATE.cycleTimer = setInterval(rotateOnePhoto, STATE.settings.cycleSec * 1000);
+    });
+    bindSlider('#brightness-slider', '#bright-val', 'brightness', v => v + '%', () => {
+      document.body.style.filter = `brightness(${STATE.settings.brightness}%)`;
+    });
+    bindSlider('#transition-slider', '#trans-val', 'transitionSec', v => (v/10).toFixed(1) + 's', () => {
+      document.documentElement.style.setProperty('--transition-photos', (STATE.settings.transitionSec/10) + 's');
+    });
+
+    // Toggle buttons
+    bindToggle('#btn-strings', 'strings', () => drawStrings(generateCorkSlots(STATE.settings.corkCount)));
+    bindToggle('#btn-tape', 'tape', () => renderCorkBoard());
+    bindToggle('#btn-screen-wake', 'screenWake', () => updateWakeLock());
+
+    // Location
+    $('#loc-input').value = STATE.settings.location.label;
+    $('#btn-loc-set').addEventListener('click', async () => {
+      const q = $('#loc-input').value.trim();
+      if (!q) return;
+      $('#loc-status').textContent = 'looking up…';
+      try {
+        const loc = await geocode(q);
+        if (!loc) { $('#loc-status').textContent = 'not found'; return; }
+        STATE.settings.location = loc;
+        saveSettings();
+        $('#loc-status').textContent = `set to ${loc.label}`;
+        updateWeather();
+      } catch (e) {
+        $('#loc-status').textContent = 'lookup failed';
+      }
+    });
+
+    // Map button
+    $('#map-btn').addEventListener('click', () => {
+      $('#map-iframe').src = 'map2.html';
+      $('#map-iframe-container').style.display = 'block';
+    });
+    $('#map-close-btn').addEventListener('click', () => {
+      $('#map-iframe-container').style.display = 'none';
+      $('#map-iframe').src = 'about:blank';
+    });
+
+    $('#open-photos-readme').addEventListener('click', (e) => {
+      e.preventDefault();
+      const f = STATE.settings;
+      if (f.ghOwner && f.ghRepo) {
+        window.open(`https://github.com/${f.ghOwner}/${f.ghRepo}/tree/${f.ghBranch||'main'}/${f.ghPath||'photos'}`, '_blank');
+      } else {
+        toast('Set your GitHub username and repo first');
+      }
+    });
+
+    // Initialize toggle visuals
+    setSlider('#cork-count-slider', '#cork-count-val', STATE.settings.corkCount, v => v);
+    setSlider('#cycle-slider', '#cycle-val', STATE.settings.cycleSec, v => v + 's');
+    setSlider('#brightness-slider', '#bright-val', STATE.settings.brightness, v => v + '%');
+    setSlider('#transition-slider', '#trans-val', Math.round(STATE.settings.transitionSec * 10), v => (v/10).toFixed(1) + 's');
+    document.body.style.filter = `brightness(${STATE.settings.brightness}%)`;
+    document.documentElement.style.setProperty('--transition-photos', STATE.settings.transitionSec + 's');
+    paintToggle('#btn-strings', STATE.settings.strings);
+    paintToggle('#btn-tape', STATE.settings.tape);
+    paintToggle('#btn-screen-wake', STATE.settings.screenWake);
+    paintMode();
+    updateGitHubStatus();
+  }
+
+  function bindSlider(sliderSel, valSel, key, fmt, onChange) {
+    const slider = $(sliderSel);
+    const val = $(valSel);
+    slider.addEventListener('input', () => {
+      const v = +slider.value;
+      val.textContent = fmt(v);
+      if (key === 'transitionSec') STATE.settings[key] = v / 10;
+      else STATE.settings[key] = v;
+      saveSettings();
+      onChange && onChange();
+    });
+  }
+  function setSlider(sliderSel, valSel, value, fmt) {
+    $(sliderSel).value = value;
+    $(valSel).textContent = fmt(value);
+  }
+  function bindToggle(sel, key, onChange) {
+    $(sel).addEventListener('click', () => {
+      STATE.settings[key] = !STATE.settings[key];
+      paintToggle(sel, STATE.settings[key]);
+      saveSettings();
+      onChange && onChange();
+    });
+  }
+  function paintToggle(sel, on) {
+    const b = $(sel);
+    b.classList.toggle('btn-active', on);
+    const tag = b.querySelector('.btn-tag');
+    if (tag) tag.textContent = on ? 'ON' : 'OFF';
+  }
+  function paintMode() {
+    $('#btn-mode-3').classList.toggle('btn-active', STATE.activeMode === 3);
+    $('#btn-mode-1').classList.toggle('btn-active', STATE.activeMode === 1);
+    document.body.classList.remove('mode-1','mode-3');
+    document.body.classList.add('mode-' + STATE.activeMode);
+  }
+  function setMode(m) {
+    STATE.activeMode = m;
+    STATE.settings.mode = m;
+    saveSettings();
+    paintMode();
+    renderCorkBoard();
+  }
+
+  // ---------- Wake lock ----------
+  async function updateWakeLock() {
+    if (STATE.settings.screenWake) {
+      try {
+        if (!STATE.wakeLock && 'wakeLock' in navigator) {
+          STATE.wakeLock = await navigator.wakeLock.request('screen');
+          STATE.wakeLock.addEventListener('release', () => { STATE.wakeLock = null; });
+        }
+      } catch (e) { console.warn('wakeLock failed', e); }
+    } else if (STATE.wakeLock) {
+      try { await STATE.wakeLock.release(); } catch {}
+      STATE.wakeLock = null;
+    }
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && STATE.settings.screenWake) updateWakeLock();
+  });
+
+  // ---------- Init ----------
+  async function init() {
+    try {
+      STATE.db = await openDB();
+    } catch (e) {
+      console.error('IDB failed', e);
+    }
+
+    tryAutoFillGitHubFromUrl();
+    saveSettings();
+
+    STATE.activeMode = STATE.settings.mode || 3;
+    document.body.classList.add('mode-' + STATE.activeMode);
+
+    bindSettings();
+    updateClock();
+    setInterval(updateClock, 1000 * 30);
+
+    await loadPhotosFromDB();
+    renderCorkBoard();
+
+    // Auto-sync if last sync was > 1 hour ago and config exists
+    if (STATE.settings.ghOwner && STATE.settings.ghRepo) {
+      const stale = Date.now() - (STATE.settings.lastSync || 0) > 1000 * 60 * 60;
+      if (stale && STATE.photos.length === 0) syncFromGitHub();
+    }
+
+    updateWeather();
+    setInterval(updateWeather, 1000 * 60 * 30);
+    updateWakeLock();
+
+    setTimeout(() => $('#splash').classList.add('hidden'), 600);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+
+})();
+</script>
+
 </body>
-
 </html>
