@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Photo Compressor · Adam's Frame</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Caveat:wght@400;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,1,0">
+<style>
+  :root {
+    --cork: #b8915f;
+    --paper: #fdfbf2;
+    --wood: #5a3a1c;
+    --accent: #d4894a;
+    --tape-mint: rgba(180, 230, 200, 0.85);
+    --tape-pink: rgba(245, 196, 210, 0.85);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    background-color: var(--cork);
+    background-image:
+      radial-gradient(ellipse 60% 50% at 12% 18%, rgba(220, 188, 142, 0.55) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 88% 85%, rgba(80, 50, 22, 0.35) 0%, transparent 55%),
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.3' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.30  0 0 0 0 0.20  0 0 0 0 0.08  0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E");
+    background-blend-mode: normal, normal, multiply;
+    min-height: 100vh;
+    font-family: 'DM Sans', sans-serif;
+    color: #2a1f12;
+    padding: 20px 16px 40px;
+  }
+  .frame {
+    max-width: 760px;
+    margin: 0 auto;
+    background: var(--paper);
+    border-radius: 6px;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.18), 0 18px 38px rgba(0,0,0,0.18);
+    padding: 32px 28px 28px;
+    position: relative;
+  }
+  .frame::before, .frame::after {
+    content: ''; position: absolute; top: -10px; width: 110px; height: 24px;
+    background: var(--tape-mint);
+    background-image: linear-gradient(90deg, transparent 0 4%, rgba(255,255,255,0.30) 4% 6%, transparent 6% 12%, rgba(255,255,255,0.20) 12% 14%, transparent 14% 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.40), 0 2px 5px rgba(0,0,0,0.18);
+    clip-path: polygon(0% 25%, 5% 12%, 10% 28%, 15% 14%, 20% 26%, 25% 14%, 30% 28%, 35% 14%, 40% 26%, 46% 18%, 52% 28%, 58% 14%, 64% 26%, 70% 18%, 76% 30%, 82% 14%, 88% 26%, 94% 14%, 100% 28%, 100% 72%, 94% 86%, 88% 74%, 82% 86%, 76% 72%, 70% 84%, 64% 72%, 58% 86%, 52% 76%, 46% 86%, 40% 76%, 35% 86%, 30% 72%, 25% 86%, 20% 76%, 15% 86%, 10% 72%, 5% 84%, 0% 76%);
+  }
+  .frame::before { left: 30px; transform: rotate(-2deg); }
+  .frame::after  { right: 30px; background-color: var(--tape-pink); transform: rotate(2deg); }
+
+  h1 { font-family: 'Permanent Marker', cursive; font-size: 1.8rem; color: #3a2410; margin-bottom: 6px; }
+  .subtitle { font-family: 'Caveat', cursive; font-size: 1.3rem; color: #6b4423; margin-bottom: 22px; }
+
+  .drop {
+    border: 2.5px dashed rgba(120, 80, 30, 0.4);
+    background: rgba(255, 250, 235, 0.6);
+    border-radius: 8px;
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .drop:hover, .drop.over {
+    background: rgba(255, 240, 210, 0.9);
+    border-color: var(--accent);
+  }
+  .drop .icon { font-size: 48px; color: var(--accent); display: block; margin-bottom: 8px; }
+  .drop .big { font-family: 'Caveat', cursive; font-size: 1.5rem; font-weight: 700; color: #3a2410; }
+  .drop .small { font-size: 0.85rem; color: #6b4423; margin-top: 4px; }
+
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 22px 0 16px;
+  }
+  .ctl {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .ctl label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #6b4423;
+    font-weight: 700;
+  }
+  .ctl input[type=range] {
+    accent-color: var(--accent);
+    height: 4px;
+  }
+  .ctl select {
+    background: #fff;
+    border: 1px solid rgba(120,80,30,0.25);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    color: #3a2410;
+  }
+  .val { color: var(--accent); font-weight: 700; }
+
+  .btn {
+    padding: 13px 22px;
+    border: 1px solid rgba(90, 58, 28, 0.22);
+    background: linear-gradient(180deg, #f5e9d0, #e8d4a8);
+    color: #4a3010;
+    border-radius: 24px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 2px 4px rgba(0,0,0,0.15);
+    display: inline-flex; align-items: center; gap: 8px; justify-content: center;
+    min-height: 44px;
+    transition: transform 0.12s;
+  }
+  .btn:hover { background: linear-gradient(180deg, #ecd9b4, #e0c994); }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { background: linear-gradient(180deg, var(--accent), #b6712f); color: #fff; border-color: #8c5520; }
+  .btn-primary:hover { background: linear-gradient(180deg, #c97935, #a05f1f); }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+
+  .summary {
+    background: rgba(220, 240, 220, 0.6);
+    border: 1px dashed rgba(60, 100, 60, 0.35);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 16px;
+    font-family: 'Caveat', cursive;
+    font-size: 1.2rem;
+    color: #2a4a30;
+    display: none;
+  }
+  .summary.visible { display: block; }
+
+  .photos {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 14px;
+  }
+  .pcard {
+    background: #fff;
+    padding: 8px 8px 30px 8px;
+    border-radius: 2px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.10), 0 6px 12px rgba(0,0,0,0.18);
+    transform: rotate(-1.5deg);
+    position: relative;
+    transition: transform 0.2s;
+  }
+  .pcard:nth-child(2n) { transform: rotate(1.2deg); }
+  .pcard:nth-child(3n) { transform: rotate(-2.4deg); }
+  .pcard:hover { transform: rotate(0) scale(1.04); z-index: 2; }
+  .pcard img {
+    width: 100%; aspect-ratio: 4/3; object-fit: cover;
+    background: #eee; border-radius: 1px;
+  }
+  .pcard .meta {
+    margin-top: 6px;
+    font-family: 'Caveat', cursive;
+    font-size: 0.95rem;
+    color: #3a2410;
+    text-align: center;
+    line-height: 1.1;
+  }
+  .pcard .saved {
+    color: #2f9e6e;
+    font-weight: 700;
+  }
+  .pcard .pin {
+    position: absolute;
+    top: -8px; left: 50%;
+    transform: translateX(-50%);
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f87171, #b91c1c);
+    box-shadow: inset -2px -2px 4px rgba(0,0,0,0.3), inset 2px 2px 3px rgba(255,255,255,0.5), 1px 2px 4px rgba(0,0,0,0.4);
+  }
+  .pcard.busy { opacity: 0.6; }
+  .pcard .dl {
+    position: absolute;
+    bottom: 6px; left: 50%; transform: translateX(-50%);
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 12px;
+    padding: 3px 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .help {
+    margin-top: 22px;
+    padding: 14px 18px;
+    background: rgba(255, 250, 235, 0.7);
+    border-left: 3px solid var(--accent);
+    font-size: 0.85rem;
+    color: #4a3010;
+    line-height: 1.55;
+    border-radius: 0 4px 4px 0;
+  }
+  .help code { background: rgba(120,80,30,0.10); padding: 1px 6px; border-radius: 3px; font-size: 0.85em; }
+  .help a { color: var(--wood); text-decoration: underline; }
+
+  .toast {
+    position: fixed; bottom: 22px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(15, 8, 4, 0.92);
+    color: #fff;
+    padding: 12px 22px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    opacity: 0;
+    transition: all 0.25s;
+    z-index: 100;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 480px) {
+    .controls { grid-template-columns: 1fr; }
+    .frame { padding: 24px 18px; }
+    h1 { font-size: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="frame">
+  <h1>Photo Compressor</h1>
+  <div class="subtitle">resize before you upload, or GitHub will pout</div>
+
+  <div class="drop" id="drop">
+    <span class="material-symbols-rounded icon">photo_library</span>
+    <div class="big">Drop photos here</div>
+    <div class="small">or tap to pick from your camera roll · works on phone</div>
+    <input type="file" id="file-input" accept="image/*" multiple style="display:none">
+  </div>
+
+  <div class="controls">
+    <div class="ctl">
+      <label>Max long edge: <span class="val" id="size-val">2000</span> px</label>
+      <input type="range" id="size-slider" min="800" max="3200" step="100" value="2000">
+    </div>
+    <div class="ctl">
+      <label>JPEG quality: <span class="val" id="quality-val">85</span>%</label>
+      <input type="range" id="quality-slider" min="50" max="95" step="5" value="85">
+    </div>
+  </div>
+
+  <div class="ctl" style="margin-bottom:12px">
+    <label>Output format</label>
+    <select id="format-select">
+      <option value="image/jpeg">JPEG (smallest, best for photos)</option>
+      <option value="image/webp">WebP (even smaller, slightly less compatible)</option>
+      <option value="image/png">PNG (lossless, much bigger)</option>
+    </select>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn" id="pick-btn"><span class="material-symbols-rounded">add_photo_alternate</span> Pick photos</button>
+    <button class="btn btn-primary" id="download-all-btn" style="display:none">
+      <span class="material-symbols-rounded">download</span> Download all
+    </button>
+    <button class="btn" id="clear-btn" style="display:none">
+      <span class="material-symbols-rounded">delete</span> Clear
+    </button>
+  </div>
+
+  <div class="summary" id="summary"></div>
+
+  <div class="photos" id="photos"></div>
+
+  <div class="help">
+    <strong>How to use this:</strong>
+    Pick a batch of photos, wait for them to compress (in your browser — nothing is uploaded anywhere), then either tap each card's "Get" button or "Download all" to save them.
+    Then go to <code>github.com/Spamalapam/Photo-Frame/tree/main/photos</code>, tap <strong>Add file → Upload files</strong>, and drop the compressed photos in.
+    Default settings (2000px JPEG q=85) typically take a 10 MB phone photo down to ~1 MB with no visible quality loss on a 12.4" tablet.
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  const drop = document.getElementById('drop');
+  const fileInput = document.getElementById('file-input');
+  const pickBtn = document.getElementById('pick-btn');
+  const sizeSlider = document.getElementById('size-slider');
+  const sizeVal = document.getElementById('size-val');
+  const qualitySlider = document.getElementById('quality-slider');
+  const qualityVal = document.getElementById('quality-val');
+  const formatSelect = document.getElementById('format-select');
+  const downloadAllBtn = document.getElementById('download-all-btn');
+  const clearBtn = document.getElementById('clear-btn');
+  const photosEl = document.getElementById('photos');
+  const summaryEl = document.getElementById('summary');
+  const toastEl = document.getElementById('toast');
+
+  let processed = []; // {origName, origSize, blob, url, outName}
+
+  function toast(msg, ms=2200) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => toastEl.classList.remove('show'), ms);
+  }
+
+  function fmtBytes(b) {
+    if (b < 1024) return b + ' B';
+    if (b < 1024*1024) return (b/1024).toFixed(0) + ' KB';
+    return (b/1024/1024).toFixed(1) + ' MB';
+  }
+
+  sizeSlider.addEventListener('input', () => sizeVal.textContent = sizeSlider.value);
+  qualitySlider.addEventListener('input', () => qualityVal.textContent = qualitySlider.value);
+
+  pickBtn.addEventListener('click', () => fileInput.click());
+  drop.addEventListener('click', (e) => {
+    if (e.target.tagName !== 'INPUT') fileInput.click();
+  });
+  fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+  ['dragenter','dragover'].forEach(ev =>
+    drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave','drop'].forEach(ev =>
+    drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', e => {
+    if (e.dataTransfer && e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+  });
+
+  clearBtn.addEventListener('click', () => {
+    processed.forEach(p => URL.revokeObjectURL(p.url));
+    processed = [];
+    photosEl.innerHTML = '';
+    summaryEl.classList.remove('visible');
+    downloadAllBtn.style.display = 'none';
+    clearBtn.style.display = 'none';
+  });
+
+  downloadAllBtn.addEventListener('click', () => {
+    if (processed.length === 0) return;
+    let i = 0;
+    const next = () => {
+      if (i >= processed.length) return;
+      downloadOne(processed[i]);
+      i++;
+      setTimeout(next, 150); // small delay so iOS Safari doesn't merge them
+    };
+    next();
+    toast(`Downloading ${processed.length} photo${processed.length===1?'':'s'}…`);
+  });
+
+  function downloadOne(p) {
+    const a = document.createElement('a');
+    a.href = p.url;
+    a.download = p.outName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  async function handleFiles(files) {
+    const list = Array.from(files).filter(f => f.type.startsWith('image/'));
+    if (list.length === 0) { toast('No image files in selection'); return; }
+    toast(`Compressing ${list.length}…`);
+
+    const maxSide = +sizeSlider.value;
+    const quality = (+qualitySlider.value) / 100;
+    const format = formatSelect.value;
+
+    for (const file of list) {
+      const card = createCard(file);
+      photosEl.appendChild(card);
+      try {
+        const result = await processFile(file, maxSide, quality, format);
+        const url = URL.createObjectURL(result.blob);
+        const outName = renameForFormat(file.name, format);
+        processed.push({ origName: file.name, origSize: file.size, blob: result.blob, url, outName });
+        finalizeCard(card, file, result, url, outName);
+      } catch (e) {
+        console.error(e);
+        card.querySelector('.meta').textContent = 'failed';
+        card.classList.remove('busy');
+      }
+    }
+
+    if (processed.length) {
+      downloadAllBtn.style.display = 'inline-flex';
+      clearBtn.style.display = 'inline-flex';
+      updateSummary();
+    }
+  }
+
+  function renameForFormat(origName, fmt) {
+    const base = origName.replace(/\.[^.]+$/, '');
+    const ext = fmt === 'image/png' ? 'png' : fmt === 'image/webp' ? 'webp' : 'jpg';
+    return `${base}.${ext}`;
+  }
+
+  function createCard(file) {
+    const card = document.createElement('div');
+    card.className = 'pcard busy';
+    card.innerHTML = `
+      <div class="pin"></div>
+      <img alt="">
+      <div class="meta">compressing…</div>
+    `;
+    return card;
+  }
+
+  function finalizeCard(card, origFile, result, url, outName) {
+    const img = card.querySelector('img');
+    img.src = url;
+    const ratio = (1 - result.blob.size / origFile.size) * 100;
+    const meta = card.querySelector('.meta');
+    meta.innerHTML = `
+      ${fmtBytes(origFile.size)} → <span class="saved">${fmtBytes(result.blob.size)}</span><br>
+      <span style="font-size:0.85em;color:#6b4423">−${ratio.toFixed(0)}% · ${result.w}×${result.h}</span>
+    `;
+    const dl = document.createElement('button');
+    dl.className = 'dl';
+    dl.textContent = 'Get';
+    dl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const a = document.createElement('a');
+      a.href = url; a.download = outName;
+      document.body.appendChild(a); a.click(); a.remove();
+    });
+    card.appendChild(dl);
+    card.classList.remove('busy');
+  }
+
+  function updateSummary() {
+    const totalIn = processed.reduce((s, p) => s + p.origSize, 0);
+    const totalOut = processed.reduce((s, p) => s + p.blob.size, 0);
+    const saved = totalIn - totalOut;
+    const pct = totalIn > 0 ? (saved / totalIn * 100).toFixed(0) : 0;
+    summaryEl.classList.add('visible');
+    summaryEl.innerHTML = `
+      ${processed.length} photo${processed.length===1?'':'s'} ·
+      ${fmtBytes(totalIn)} → ${fmtBytes(totalOut)} ·
+      saved ${fmtBytes(saved)} (−${pct}%)
+    `;
+  }
+
+  function processFile(file, maxSide, quality, format) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(reader.error);
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error('image decode failed'));
+        img.onload = () => {
+          let w = img.naturalWidth;
+          let h = img.naturalHeight;
+          if (Math.max(w, h) > maxSide) {
+            if (w >= h) { h = Math.round(h * maxSide / w); w = maxSide; }
+            else        { w = Math.round(w * maxSide / h); h = maxSide; }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          // Fill white for JPEG (so transparency doesn't go black)
+          if (format === 'image/jpeg') {
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, w, h);
+          }
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, w, h);
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) return reject(new Error('toBlob failed'));
+              resolve({ blob, w, h });
+            },
+            format,
+            format === 'image/png' ? undefined : quality
+          );
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+})();
+</script>
+
+</body>
+</html>
