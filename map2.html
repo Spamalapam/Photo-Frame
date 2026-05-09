@@ -922,6 +922,410 @@
                 width: calc(50% - 5px);
             }
         }
+
+/* ============================================================
+   map2-cork-overlay.css
+   Drop-in cork-board restyle for map2.html (Traveler's Dashboard).
+   ============================================================ */
+
+/* --- Re-theme the palette to match the cork frame --- */
+:root {
+  --visited: #2f9e6e;
+  --visited-stroke: #1f6b48;
+  --planned: #e8b94e;
+  --planned-stroke: #a87b1a;
+  --unvisited: #efe4cc;
+  --unvisited-stroke: #c2a878;
+
+  --cork-base: #b8915f;
+  --cork-light: #d4ae7d;
+  --cork-dark: #7d5a35;
+  --wood-frame: #5a3a1c;
+  --paper: #fdfbf2;
+
+  --tape-mint: rgba(180, 230, 200, 0.85);
+  --tape-pink: rgba(245, 196, 210, 0.85);
+  --tape-blue: rgba(180, 215, 240, 0.85);
+  --tape-kraft: rgba(220, 195, 150, 0.90);
+}
+
+/* --- Cork-board background, like the frame --- */
+body {
+  background-color: var(--cork-base) !important;
+  background-image:
+    radial-gradient(ellipse 60% 50% at 12% 18%, rgba(220, 188, 142, 0.55) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 50% at 88% 85%, rgba(80, 50, 22, 0.35) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 60% at 50% 50%, rgba(195, 158, 110, 0.18) 0%, transparent 70%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.3' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.30  0 0 0 0 0.20  0 0 0 0 0.08  0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E") !important;
+  background-blend-mode: normal, normal, normal, multiply !important;
+  position: relative;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  border: 22px solid transparent;
+  border-image: linear-gradient(
+      135deg,
+      #6b4423 0%, #8b5e35 12%, #5a3a1c 25%, #8b5e35 38%,
+      #4a3018 50%, #8b5e35 62%, #6b4423 75%, #8b5e35 88%, #5a3a1c 100%
+    ) 1;
+  box-shadow: inset 0 0 0 2px rgba(0,0,0,0.45), inset 0 0 0 4px rgba(255,210,160,0.07);
+  z-index: 9990;
+  pointer-events: none;
+}
+
+/* --- Top bar: sticky-note styling, washi tape pinned --- */
+.top-bar {
+  background: var(--paper) !important;
+  background-image: linear-gradient(135deg, rgba(255,255,255,0.55) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.025) 100%) !important;
+  border-bottom: none !important;
+  margin: 18px 22px 0 22px !important;
+  padding: 18px 26px !important;
+  border-radius: 4px !important;
+  box-shadow:
+    0 2px 4px rgba(0,0,0,0.10),
+    0 8px 18px rgba(0,0,0,0.18),
+    0 18px 38px rgba(0,0,0,0.10) !important;
+  position: relative;
+  transform: rotate(-0.4deg);
+}
+.top-bar::before {
+  content: '';
+  position: absolute;
+  top: -10px; left: 30px;
+  width: 110px; height: 24px;
+  background: var(--tape-mint);
+  background-image:
+    linear-gradient(90deg, transparent 0 4%, rgba(255,255,255,0.30) 4% 6%, transparent 6% 12%, rgba(255,255,255,0.20) 12% 14%, transparent 14% 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.40), inset 0 -1px 0 rgba(0,0,0,0.10), 0 2px 5px rgba(0,0,0,0.18);
+  clip-path: polygon(
+    0% 25%, 5% 12%, 10% 28%, 15% 14%, 20% 26%, 25% 14%, 30% 28%, 35% 14%, 40% 26%,
+    46% 18%, 52% 28%, 58% 14%, 64% 26%, 70% 18%, 76% 30%, 82% 14%, 88% 26%, 94% 14%, 100% 28%,
+    100% 72%, 94% 86%, 88% 74%, 82% 86%, 76% 72%, 70% 84%, 64% 72%, 58% 86%, 52% 76%, 46% 86%,
+    40% 76%, 35% 86%, 30% 72%, 25% 86%, 20% 76%, 15% 86%, 10% 72%, 5% 84%, 0% 76%
+  );
+  z-index: 11;
+}
+.top-bar::after {
+  content: '';
+  position: absolute;
+  top: -10px; right: 40px;
+  width: 110px; height: 24px;
+  background: var(--tape-kraft);
+  background-image:
+    linear-gradient(90deg, transparent 0 4%, rgba(255,255,255,0.30) 4% 6%, transparent 6% 12%, rgba(255,255,255,0.20) 12% 14%, transparent 14% 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.40), inset 0 -1px 0 rgba(0,0,0,0.10), 0 2px 5px rgba(0,0,0,0.18);
+  clip-path: polygon(
+    0% 25%, 5% 12%, 10% 28%, 15% 14%, 20% 26%, 25% 14%, 30% 28%, 35% 14%, 40% 26%,
+    46% 18%, 52% 28%, 58% 14%, 64% 26%, 70% 18%, 76% 30%, 82% 14%, 88% 26%, 94% 14%, 100% 28%,
+    100% 72%, 94% 86%, 88% 74%, 82% 86%, 76% 72%, 70% 84%, 64% 72%, 58% 86%, 52% 76%, 46% 86%,
+    40% 76%, 35% 86%, 30% 72%, 25% 86%, 20% 76%, 15% 86%, 10% 72%, 5% 84%, 0% 76%
+  );
+  transform: rotate(2deg);
+  z-index: 11;
+}
+
+.logo {
+  font-family: 'Permanent Marker', 'Caveat', cursive !important;
+  font-size: 1.85rem !important;
+  color: #3a2410 !important;
+}
+
+/* --- Controls: bigger for tablet, tactile pin-look --- */
+.controls button {
+  font-size: 1rem !important;
+  padding: 11px 20px !important;
+  border-radius: 24px !important;
+  background: #f5e9d0 !important;
+  color: #4a3010 !important;
+  border: 1px solid rgba(90, 58, 28, 0.22) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.6) inset,
+    0 -1px 0 rgba(0,0,0,0.06) inset,
+    0 2px 4px rgba(0,0,0,0.18) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.2px;
+  min-height: 44px;
+  transition: transform 0.12s, box-shadow 0.12s !important;
+}
+.controls button:hover  { background: #ecd9b4 !important; }
+.controls button:active { transform: translateY(1px); box-shadow: 0 1px 0 rgba(255,255,255,0.4) inset, 0 1px 2px rgba(0,0,0,0.12) !important; }
+.controls button.active {
+  background: linear-gradient(180deg, #5a3a1c, #3a2410) !important;
+  color: #f4e4c5 !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.4) inset, 0 4px 10px rgba(58, 36, 16, 0.35) !important;
+}
+.controls .sv {
+  background: linear-gradient(180deg, #c8e4f6, #a8cde6) !important;
+  color: #1d4ed8 !important;
+}
+.controls .sv:hover { background: linear-gradient(180deg, #b8d6ec, #98bdd6) !important; }
+.controls .back-btn {
+  background: linear-gradient(180deg, #fde7a3, #f5cd5a) !important;
+  color: #6a3e0a !important;
+  border-color: #b88a2c !important;
+}
+
+/* --- Map container: parchment paper feel, hand-drawn vibe --- */
+main {
+  padding: 22px 26px !important;
+  gap: 22px !important;
+}
+#map-container {
+  background-color: #faf3e2 !important;
+  background-image:
+    radial-gradient(circle at 20% 25%, rgba(180,140,90, 0.06) 0%, transparent 50%),
+    radial-gradient(circle at 80% 75%, rgba(180,140,90, 0.07) 0%, transparent 55%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.2' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.55  0 0 0 0 0.40  0 0 0 0 0.20  0 0 0 0.40 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.30'/%3E%3C/svg%3E"),
+    radial-gradient(#d4b78b 1px, transparent 1.2px) !important;
+  background-size: 100% 100%, 100% 100%, 60% 60%, 28px 28px !important;
+  background-blend-mode: normal, normal, multiply, normal !important;
+  border-radius: 4px !important;
+  box-shadow:
+    inset 0 0 30px rgba(120, 80, 30, 0.18),
+    inset 0 0 0 1px rgba(120, 80, 30, 0.20),
+    0 12px 30px rgba(0,0,0,0.30),
+    0 24px 60px rgba(0,0,0,0.18) !important;
+  position: relative;
+}
+/* Faux torn / aged corners */
+#map-container::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at 0 0,    rgba(140,90,40,0.18) 0%, transparent 8%),
+    radial-gradient(ellipse at 100% 0, rgba(140,90,40,0.18) 0%, transparent 8%),
+    radial-gradient(ellipse at 0 100%, rgba(140,90,40,0.18) 0%, transparent 8%),
+    radial-gradient(ellipse at 100% 100%, rgba(140,90,40,0.18) 0%, transparent 8%);
+  pointer-events: none;
+  border-radius: 4px;
+}
+
+/* Bigger paper pins */
+.paper-pin {
+  width: 18px !important; height: 18px !important;
+  background: radial-gradient(circle at 30% 30%, #ffafaf, #c81e1e) !important;
+  box-shadow: 2px 5px 7px rgba(0,0,0,0.4), inset -2px -2px 4px rgba(0,0,0,0.25) !important;
+}
+
+/* Map title — handwritten, larger, tilted */
+#map-title {
+  font-size: 4.6rem !important;
+  font-family: 'Caveat', cursive !important;
+  color: #6b4423 !important;
+  opacity: 0.55 !important;
+  transform: rotate(-2deg);
+  font-weight: 700 !important;
+  text-shadow: 1px 2px 0 rgba(255,255,255,0.4);
+}
+
+/* Region styling: warmer, hand-drawn */
+.region.unvisited {
+  fill: var(--unvisited) !important;
+  stroke: var(--unvisited-stroke) !important;
+  stroke-width: 1px !important;
+  stroke-dasharray: 0 !important;
+}
+.region.planned {
+  fill: var(--planned) !important;
+  stroke: var(--planned-stroke) !important;
+  stroke-width: 1.4px !important;
+  filter: drop-shadow(0 0 6px rgba(232, 185, 78, 0.6)) !important;
+}
+.region.visited {
+  fill: var(--visited) !important;
+  stroke: var(--visited-stroke) !important;
+  stroke-width: 1.4px !important;
+  filter: drop-shadow(0 1px 1px rgba(31, 107, 72, 0.45));
+}
+.region {
+  transition: fill 0.3s, filter 0.3s, stroke 0.3s !important;
+}
+.region:hover {
+  filter: brightness(1.08) drop-shadow(0 2px 4px rgba(0,0,0,0.25)) !important;
+}
+
+/* Park pins: bigger tap targets */
+.park-pin {
+  stroke-width: 2px !important;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.45)) !important;
+}
+
+/* Legend */
+.legend {
+  background: var(--paper) !important;
+  background-image: linear-gradient(135deg, rgba(255,255,255,0.55) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.025) 100%) !important;
+  padding: 14px 18px !important;
+  border-radius: 4px !important;
+  font-size: 0.95rem !important;
+  font-family: 'Caveat', cursive !important;
+  font-weight: 600 !important;
+  color: #4a3010 !important;
+  box-shadow:
+    0 2px 4px rgba(0,0,0,0.10),
+    0 6px 14px rgba(0,0,0,0.16) !important;
+  transform: rotate(-1.2deg);
+}
+.legend-item { font-size: 1.05rem !important; margin-bottom: 6px !important; }
+.dot { width: 14px !important; height: 14px !important; }
+
+/* --- Sticky note panel: matches index.html washi-tape style --- */
+.sticky-note {
+  background: #fef3a3 !important;
+  background-image: linear-gradient(135deg, rgba(255,255,255,0.55) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.025) 100%) !important;
+  border-radius: 4px !important;
+  padding: 32px 26px 26px 26px !important;
+  width: 420px !important;
+  box-shadow:
+    0 2px 4px rgba(0,0,0,0.10),
+    0 8px 18px rgba(0,0,0,0.18),
+    0 18px 38px rgba(0,0,0,0.12) !important;
+  transform: rotate(1.2deg);
+}
+.sticky-note::before {
+  content: '';
+  position: absolute;
+  top: -10px; left: 50%;
+  transform: translateX(-50%) rotate(-2deg);
+  width: 130px; height: 24px;
+  background: var(--tape-pink);
+  background-image:
+    linear-gradient(90deg, transparent 0 4%, rgba(255,255,255,0.30) 4% 6%, transparent 6% 12%, rgba(255,255,255,0.20) 12% 14%, transparent 14% 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.40), inset 0 -1px 0 rgba(0,0,0,0.12), 0 2px 5px rgba(0,0,0,0.18);
+  clip-path: polygon(
+    0% 25%, 5% 12%, 10% 28%, 15% 14%, 20% 26%, 25% 14%, 30% 28%, 35% 14%, 40% 26%,
+    46% 18%, 52% 28%, 58% 14%, 64% 26%, 70% 18%, 76% 30%, 82% 14%, 88% 26%, 94% 14%, 100% 28%,
+    100% 72%, 94% 86%, 88% 74%, 82% 86%, 76% 72%, 70% 84%, 64% 72%, 58% 86%, 52% 76%, 46% 86%,
+    40% 76%, 35% 86%, 30% 72%, 25% 86%, 20% 76%, 15% 86%, 10% 72%, 5% 84%, 0% 76%
+  );
+  z-index: 11;
+}
+/* Hide the old pin */
+.sticky-pin { display: none !important; }
+
+.sticky-note h2 {
+  font-size: 2.4rem !important;
+  font-family: 'Caveat', cursive !important;
+  margin-top: 0 !important;
+}
+.itin-sel-btn {
+  font-size: 0.85rem !important;
+  padding: 7px 14px !important;
+  min-height: 36px !important;
+}
+.itin-sel-btn.sel {
+  background: #5a3a1c !important;
+  color: #fef3a3 !important;
+  border-color: #5a3a1c !important;
+}
+
+/* --- Scrapbook modal: paper texture, refined --- */
+.scrapbook {
+  background: var(--paper) !important;
+  background-image:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.2' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.55  0 0 0 0 0.40  0 0 0 0 0.20  0 0 0 0.40 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.20'/%3E%3C/svg%3E") !important;
+  border-radius: 6px !important;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(120,80,30,0.18) !important;
+}
+.scrapbook-header {
+  background: #efe2c0 !important;
+  border-bottom-color: rgba(120,80,30,0.18) !important;
+  border-radius: 6px 6px 0 0 !important;
+}
+.scrapbook-header h2 {
+  font-family: 'Caveat', cursive !important;
+  font-size: 2.8rem !important;
+  color: #3a2410 !important;
+}
+.section-title {
+  color: #5a3a1c !important;
+  letter-spacing: 1.5px !important;
+}
+.check-text { font-size: 1.4rem !important; }
+.tag {
+  background: #efe2c0 !important;
+  color: #5a3a1c !important;
+  border: 1px solid rgba(120,80,30,0.18);
+}
+
+/* Photos in scrapbook → polaroid look */
+.photo-card {
+  background: var(--paper) !important;
+  padding: 8px 8px 32px 8px !important;
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.10),
+    0 6px 12px rgba(0,0,0,0.18),
+    0 14px 26px rgba(0,0,0,0.12) !important;
+  border-radius: 2px !important;
+  transform: rotate(-1deg);
+  transition: transform 0.2s;
+}
+.photo-card:nth-child(2n) { transform: rotate(1.2deg); }
+.photo-card:nth-child(3n) { transform: rotate(-2deg); }
+.photo-card:hover { transform: rotate(0) scale(1.04); z-index: 10; }
+.photo-card img { height: 110px !important; }
+
+/* Buttons in scrapbook */
+.btn-action, .btn-import, .btn-copy, .btn-generate, .btn-reset {
+  font-size: 0.92rem !important;
+  padding: 8px 18px !important;
+  min-height: 40px !important;
+  border-radius: 22px !important;
+}
+.upload-btn {
+  background: #efe2c0 !important;
+  border-color: #b88a4c !important;
+  color: #4a3010 !important;
+  font-size: 1rem !important;
+  padding: 16px !important;
+  min-height: 56px !important;
+}
+.upload-btn:hover { background: #e4d2a8 !important; }
+
+/* Notes textarea: lined paper feel */
+#sb-notes {
+  font-family: 'Caveat', cursive !important;
+  font-size: 1.7rem !important;
+  background: repeating-linear-gradient(transparent, transparent 32px, rgba(120,80,30,0.20) 32px, rgba(120,80,30,0.20) 33px) !important;
+  line-height: 33px !important;
+  height: 132px !important;
+}
+
+/* Toast: matches index */
+.toast {
+  background: rgba(15, 8, 4, 0.92) !important;
+  border: 1px solid rgba(255,200,140,0.15);
+  border-radius: 14px !important;
+  font-size: 0.95rem !important;
+}
+
+/* Tablet ergonomics: bump tap targets sitewide */
+@media (min-width: 1100px) {
+  .controls { gap: 10px !important; }
+  .controls button { font-size: 1.05rem !important; padding: 12px 22px !important; }
+  .legend { font-size: 1.1rem !important; padding: 16px 22px !important; }
+  .sticky-note { width: 460px !important; }
+  .sticky-note h2 { font-size: 2.7rem !important; }
+}
+
+/* Park tooltip refinement */
+.park-tooltip {
+  background: rgba(58, 36, 16, 0.95) !important;
+  font-family: 'Caveat', cursive !important;
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+  padding: 8px 14px !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(255, 200, 140, 0.20);
+}
+
+/* Locked overlay (scrapbook lock screen) */
+.locked-overlay {
+  background: rgba(250, 245, 230, 0.92) !important;
+  backdrop-filter: blur(6px);
+}
+.locked-text { font-family: 'Caveat', cursive !important; color: #5a3a1c !important; }
+
     </style>
 </head>
 
