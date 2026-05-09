@@ -1489,8 +1489,28 @@ body {
   // ---------- Google Drive sync ----------
   // Lists images from a publicly shared Drive folder via Drive API v3 + API key.
   // No OAuth required. The folder must be set to "Anyone with the link can view".
+
+  // Extract bare folder ID from a full Drive URL (or return as-is if already an ID)
+  function extractDriveFolderId(input) {
+    if (!input) return '';
+    const s = input.trim();
+    // Match: https://drive.google.com/drive/folders/FOLDER_ID or /u/0/folders/FOLDER_ID etc.
+    const m = s.match(/\/folders\/([A-Za-z0-9_-]+)/);
+    if (m) return m[1];
+    // Match: id=FOLDER_ID in query string
+    const m2 = s.match(/[?&]id=([A-Za-z0-9_-]+)/);
+    if (m2) return m2[1];
+    // Already a bare ID (no slashes, no dots)
+    if (/^[A-Za-z0-9_-]+$/.test(s)) return s;
+    return s; // fallback: use as-is
+  }
+
   async function syncFromDrive() {
     if (STATE.syncing) return;
+    // Auto-clean the folder ID in case user pasted a full URL
+    STATE.settings.gdFolder = extractDriveFolderId(STATE.settings.gdFolder);
+    saveSettings();
+    $('#gd-folder').value = STATE.settings.gdFolder;
     const { gdKey, gdFolder } = STATE.settings;
     if (!gdKey || !gdFolder) { toast('Set the Drive API key and folder ID first'); return; }
 
@@ -1581,10 +1601,17 @@ body {
     } catch (e) {
       console.error(e);
       let hint = e.message || 'Sync failed';
-      if (/403/.test(hint)) hint += ' — folder must be shared "Anyone with the link can view"';
-      else if (/400/.test(hint)) hint += ' — check the folder ID and that the Drive API is enabled for your key';
-      setSyncStatus('error', hint.slice(0, 80));
-      toast('Drive sync failed: ' + hint.slice(0, 90));
+      if (/403/.test(hint)) {
+        if (/has not been used in project/.test(hint) || /is disabled/.test(hint) || /API_KEY_HTTP_REFERRER_BLOCKED/.test(hint)) {
+          hint = '403: Google Drive API is not enabled for your API key project. Go to console.cloud.google.com → search "Google Drive API" → click Enable.';
+        } else {
+          hint = '403: Folder must be shared as "Anyone with the link can view", or your API key referrer restrictions are blocking this domain.';
+        }
+      } else if (/400/.test(hint)) {
+        hint = '400: Check the folder ID and verify the Drive API is enabled for your key.';
+      }
+      setSyncStatus('error', hint.slice(0, 120));
+      toast('Drive sync failed: ' + hint.slice(0, 120));
     } finally {
       STATE.syncing = false;
     }
@@ -2020,8 +2047,10 @@ body {
     $('#gd-key').value    = f.gdKey || '';
     ['gd-folder','gd-key'].forEach(id => {
       $('#'+id).addEventListener('change', () => {
-        STATE.settings.gdFolder = $('#gd-folder').value.trim();
+        STATE.settings.gdFolder = extractDriveFolderId($('#gd-folder').value);
         STATE.settings.gdKey    = $('#gd-key').value.trim();
+        // Update the input to show the cleaned ID
+        $('#gd-folder').value = STATE.settings.gdFolder;
         saveSettings();
         updateDriveStatus();
       });
