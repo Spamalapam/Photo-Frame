@@ -15,6 +15,8 @@ test('Drive sync and rendering support photos and videos', () => {
   assert.match(html, /mimeType contains 'image\/' or mimeType contains 'video\/'/);
   assert.match(html, /function createMediaElement/);
   assert.match(html, /document\.createElement\('video'\)/);
+  assert.match(html, /function migrateDriveMediaRecord/);
+  assert.match(html, /drive\.google\.com\/thumbnail/);
 });
 
 test('Cork board has auto arrange, manual move, tap-to-change, and lock controls', () => {
@@ -37,10 +39,25 @@ test('Cycle interval can be set up to 30 minutes', () => {
   assert.match(html, /Math\.min\(1800/);
 });
 
-test('Auto layout uses dynamic slots and media aspect fitting', () => {
-  assert.match(html, /Math\.min\(12, count\)/);
+test('Auto layout is capped to 5 photos with 3-photo default and media aspect fitting', () => {
+  assert.match(html, /id="cork-count-slider" min="3" max="5" step="1" value="3"/);
+  assert.match(html, /corkCount:\s*3/);
+  assert.match(html, /Math\.min\(5, count\)/);
   assert.match(html, /function fitSlotToAspect/);
-  assert.match(html, /object-fit: cover/);
+  assert.match(html, /object-fit: contain/);
+});
+
+test('Night dimming and optional gentle photo motion are configurable', () => {
+  assert.match(html, /id="btn-auto-dim"/);
+  assert.match(html, /id="night-brightness-slider"/);
+  assert.match(html, /function applyBrightness/);
+  assert.match(html, /id="btn-photo-motion"/);
+  assert.match(html, /function applyMotionSetting/);
+  assert.match(html, /body\.motion-on \.ken-burns/);
+});
+
+test('Cork board uses a generated bitmap texture asset', () => {
+  assert.match(html, /url\("assets\/corkboard-texture\.jpg"\)/);
 });
 
 test('Weather is locked to American Fork, Utah', () => {
