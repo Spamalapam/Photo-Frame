@@ -484,7 +484,7 @@ body {
   display: block;
 }
 .media-item.loaded { opacity: 1; transform: scale(1); }
-.mode-3 .media-item { object-fit: contain; }
+.mode-3 .media-item { object-fit: cover; }
 video.media-item { background: #111; }
 
 .media-container .media-item.fading-out {
@@ -748,7 +748,7 @@ video.media-item { background: #111; }
 #sync-status.error .dot   { background: #f87171; box-shadow: 0 0 8px #f87171; }
 @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity: 0.4; } }
 
-#map-btn, #settings-btn {
+#fullscreen-btn, #map-btn, #settings-btn {
   width: 52px; height: 52px;
   background: rgba(0,0,0,0.45);
   backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
@@ -761,7 +761,7 @@ video.media-item { background: #111; }
   box-shadow: 0 4px 22px rgba(0,0,0,0.30), 0 0 0 0.5px rgba(255,255,255,0.06);
   transition: transform 0.2s, background 0.2s;
 }
-#map-btn:active, #settings-btn:active { transform: scale(0.92); }
+#fullscreen-btn:active, #map-btn:active, #settings-btn:active { transform: scale(0.92); }
 #settings-btn .material-symbols-rounded { transition: transform 0.4s; }
 #settings-btn.active .material-symbols-rounded { transform: rotate(90deg); }
 
@@ -1068,6 +1068,7 @@ video.media-item { background: #111; }
   <!-- top bar -->
   <div id="top-bar">
     <div id="sync-status"><span class="dot"></span><span id="sync-text">Synced</span></div>
+    <div id="fullscreen-btn" title="Make browser fullscreen"><span class="material-symbols-rounded">fullscreen</span></div>
     <div id="map-btn" title="Open map dashboard"><span class="material-symbols-rounded">map</span></div>
     <div id="settings-btn"><span class="material-symbols-rounded">settings</span></div>
   </div>
@@ -1129,12 +1130,15 @@ video.media-item { background: #111; }
     <div class="settings-body">
 
       <div class="setting-group">
-        <span class="setting-label">Display Mode</span>
+        <span class="setting-label">Frame Layout</span>
         <button class="pro-btn" data-mode="3" id="btn-mode-3">
           Cork Board <span class="btn-tag">grid of polaroids</span>
         </button>
         <button class="pro-btn" data-mode="1" id="btn-mode-1">
-          Fullscreen <span class="btn-tag">single photo</span>
+          Single Photo <span class="btn-tag">one rotating item</span>
+        </button>
+        <button class="pro-btn" id="btn-browser-fullscreen">
+          Browser Fullscreen <span class="btn-tag">tablet view</span>
         </button>
       </div>
 
@@ -1187,13 +1191,13 @@ video.media-item { background: #111; }
         <span class="setting-label">Cork Board</span>
         <div class="slider-row">
           <label>Photos shown</label>
-          <input type="range" id="cork-count-slider" min="3" max="9" step="1" value="5">
+          <input type="range" id="cork-count-slider" min="3" max="12" step="1" value="5">
           <span class="slider-val" id="cork-count-val">5</span>
         </div>
         <div class="slider-row">
-          <label>Cycle (s)</label>
-          <input type="range" id="cycle-slider" min="5" max="60" step="1" value="14">
-          <span class="slider-val" id="cycle-val">14s</span>
+          <label>Cycle</label>
+          <input type="range" id="cycle-slider" min="5" max="1800" step="5" value="15">
+          <span class="slider-val" id="cycle-val">15s</span>
         </div>
         <div class="slider-row">
           <label>Brightness</label>
@@ -1282,7 +1286,7 @@ video.media-item { background: #111; }
       mode: 3,
       brightness: 100,
       transitionSec: 0.9,
-      cycleSec: 14,
+      cycleSec: 15,
       corkCount: 5,
       strings: true,
       tape: true,
@@ -1326,6 +1330,7 @@ video.media-item { background: #111; }
       gdFolder: DEFAULT_DRIVE_FOLDER_ID,
       gdAccount: 'runner4evs@gmail.com',
       primarySource: 'drive',
+      cycleSec: Math.round(clamp(Number(s.cycleSec || 15), 5, 1800) / 5) * 5,
       arrangeMode: s.arrangeMode === 'manual' ? 'manual' : 'auto',
       manualSlots: s.manualSlots || {},
       lockedSlots: s.lockedSlots || {},
@@ -1764,6 +1769,43 @@ video.media-item { background: #111; }
    * Designed for landscape 16:10 (Galaxy Tab S7+) — leaves bottom ~24% for sticky widgets.
    */
   function generateCorkSlots(count, vw, vh) {
+    const n = Math.max(3, Math.min(12, count));
+    const rows = n <= 3 ? 1 : n <= 6 ? 2 : 3;
+    const rowCounts = [];
+    let remaining = n;
+    for (let row = 0; row < rows; row++) {
+      const rowsLeft = rows - row;
+      const rowCount = Math.ceil(remaining / rowsLeft);
+      rowCounts.push(rowCount);
+      remaining -= rowCount;
+    }
+    const yBands = rows === 1 ? [30] : rows === 2 ? [20, 49] : [14, 34, 56];
+    const baseSize = rows === 1
+      ? { w: 28, h: 38 }
+      : rows === 2
+        ? { w: 24, h: 31 }
+        : { w: 19, h: 24 };
+    const rotations = [-4.2, 2.4, -1.6, 3.8, -3.1, 1.8, -2.2, 4.4, -3.6, 2.9, -1.1, 3.2];
+    const slots = [];
+    rowCounts.forEach((rowCount, row) => {
+      const stagger = rows > 1 && row % 2 ? 4 : -2;
+      for (let col = 0; col < rowCount; col++) {
+        const x = ((col + 1) / (rowCount + 1)) * 100 + stagger;
+        const idx = slots.length;
+        slots.push({
+          x: clamp(x, 10, 90),
+          y: yBands[row],
+          w: baseSize.w,
+          h: baseSize.h,
+          rot: rotations[idx % rotations.length],
+          style: 'polaroid',
+          clip: idx % 4 === 2,
+          tape: idx % 3 !== 1
+        });
+      }
+    });
+    return slots;
+
     // Predefined nice layouts per count
     const presets = {
       3: [
@@ -1890,16 +1932,16 @@ video.media-item { background: #111; }
   function fitSlotToAspect(slot, aspect) {
     const vw = window.innerWidth || 2800;
     const vh = window.innerHeight || 1752;
-    const safeAspect = Math.max(0.42, Math.min(2.6, Number(aspect) || 1));
+    const safeAspect = Math.max(0.48, Math.min(2.35, Number(aspect) || 1));
     const baseW = (slot.w / 100) * vw;
     const baseH = (slot.h / 100) * vh;
-    const area = Math.max(baseW * baseH, vw * vh * 0.018);
+    const area = Math.max(baseW * baseH * 1.22, vw * vh * 0.026);
     let pxW = Math.sqrt(area * safeAspect);
     let pxH = pxW / safeAspect;
-    const maxW = vw * (safeAspect > 1.55 ? 0.30 : 0.24);
-    const maxH = vh * (safeAspect < 0.78 ? 0.43 : 0.36);
-    const minW = vw * 0.11;
-    const minH = vh * 0.15;
+    const maxW = vw * (safeAspect > 1.45 ? 0.36 : 0.28);
+    const maxH = vh * (safeAspect < 0.82 ? 0.50 : 0.39);
+    const minW = vw * 0.14;
+    const minH = vh * 0.18;
     const scaleDown = Math.min(1, maxW / pxW, maxH / pxH);
     pxW *= scaleDown;
     pxH *= scaleDown;
@@ -1913,7 +1955,7 @@ video.media-item { background: #111; }
       w,
       h,
       x: clamp(slot.x, w / 2 + 2, 98 - w / 2),
-      y: clamp(slot.y, h / 2 + 4, 70 - h / 2)
+      y: clamp(slot.y, h / 2 + 3, 68 - h / 2)
     };
   }
 
@@ -2037,8 +2079,7 @@ video.media-item { background: #111; }
     });
 
     drawStrings(stringSlots);
-    if (STATE.cycleTimer) { clearInterval(STATE.cycleTimer); }
-    STATE.cycleTimer = setInterval(rotateOnePhoto, STATE.settings.cycleSec * 1000);
+    restartCycleTimer();
   }
 
   function pickPhotosForBoard(n) {
@@ -2139,11 +2180,7 @@ video.media-item { background: #111; }
     box.appendChild(media);
     wrapper.appendChild(box);
 
-    if (STATE.cycleTimer) clearInterval(STATE.cycleTimer);
-    STATE.cycleTimer = setInterval(() => {
-      STATE.rotationIndex++;
-      renderFullscreen();
-    }, STATE.settings.cycleSec * 1000);
+    restartCycleTimer();
   }
 
   function renderEmptyState() {
@@ -2168,6 +2205,29 @@ video.media-item { background: #111; }
     const targetBox = boxes[STATE.rotationIndex % boxes.length];
     STATE.rotationIndex++;
     changePhotoInBox(targetBox);
+  }
+
+  function restartCycleTimer() {
+    if (STATE.cycleTimer) clearInterval(STATE.cycleTimer);
+    STATE.cycleTimer = null;
+    const ms = Math.max(5, Math.min(1800, Number(STATE.settings.cycleSec) || 15)) * 1000;
+    if (STATE.activeMode === 1) {
+      STATE.cycleTimer = setInterval(() => {
+        STATE.rotationIndex++;
+        renderFullscreen();
+      }, ms);
+    } else if (STATE.activeMode === 3) {
+      STATE.cycleTimer = setInterval(rotateOnePhoto, ms);
+    }
+  }
+
+  function formatDuration(seconds) {
+    const s = Number(seconds) || 0;
+    if (s < 60) return `${s}s`;
+    const minutes = Math.floor(s / 60);
+    const rem = s % 60;
+    if (!rem) return `${minutes} min`;
+    return `${minutes} min ${rem}s`;
   }
 
   function changePhotoInBox(targetBox, preferredPhoto=null) {
@@ -2323,6 +2383,9 @@ video.media-item { background: #111; }
     // Modes
     $('#btn-mode-3').addEventListener('click', () => setMode(3));
     $('#btn-mode-1').addEventListener('click', () => setMode(1));
+    $('#fullscreen-btn').addEventListener('click', toggleBrowserFullscreen);
+    $('#btn-browser-fullscreen').addEventListener('click', toggleBrowserFullscreen);
+    document.addEventListener('fullscreenchange', paintBrowserFullscreen);
 
     // GitHub fields
     const f = STATE.settings;
@@ -2379,10 +2442,7 @@ video.media-item { background: #111; }
 
     // Sliders
     bindSlider('#cork-count-slider', '#cork-count-val', 'corkCount', v => v, () => renderCorkBoard());
-    bindSlider('#cycle-slider', '#cycle-val', 'cycleSec', v => v + 's', () => {
-      if (STATE.cycleTimer) clearInterval(STATE.cycleTimer);
-      STATE.cycleTimer = setInterval(rotateOnePhoto, STATE.settings.cycleSec * 1000);
-    });
+    bindSlider('#cycle-slider', '#cycle-val', 'cycleSec', formatDuration, restartCycleTimer);
     bindSlider('#brightness-slider', '#bright-val', 'brightness', v => v + '%', () => {
       document.body.style.filter = `brightness(${STATE.settings.brightness}%)`;
     });
@@ -2433,7 +2493,7 @@ video.media-item { background: #111; }
 
     // Initialize toggle visuals
     setSlider('#cork-count-slider', '#cork-count-val', STATE.settings.corkCount, v => v);
-    setSlider('#cycle-slider', '#cycle-val', STATE.settings.cycleSec, v => v + 's');
+    setSlider('#cycle-slider', '#cycle-val', STATE.settings.cycleSec, formatDuration);
     setSlider('#brightness-slider', '#bright-val', STATE.settings.brightness, v => v + '%');
     setSlider('#transition-slider', '#trans-val', Math.round(STATE.settings.transitionSec * 10), v => (v/10).toFixed(1) + 's');
     document.body.style.filter = `brightness(${STATE.settings.brightness}%)`;
@@ -2442,6 +2502,7 @@ video.media-item { background: #111; }
     paintToggle('#btn-tape', STATE.settings.tape);
     paintArrange();
     paintToggle('#btn-screen-wake', STATE.settings.screenWake);
+    paintBrowserFullscreen();
     paintMode();
     updateGitHubStatus();
     updateDriveStatus();
@@ -2484,6 +2545,33 @@ video.media-item { background: #111; }
     b.firstChild.textContent = manual ? 'Auto Arrange Photos ' : 'Manual Move Photos ';
     const tag = b.querySelector('.btn-tag');
     if (tag) tag.textContent = manual ? 'ON' : 'OFF';
+  }
+  async function toggleBrowserFullscreen() {
+    try {
+      if (!document.fullscreenElement) {
+        const el = document.documentElement;
+        if (!el.requestFullscreen) {
+          toast('Browser fullscreen is not available here');
+          return;
+        }
+        await el.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+      paintBrowserFullscreen();
+    } catch (e) {
+      toast('Browser fullscreen was blocked by the browser');
+    }
+  }
+  function paintBrowserFullscreen() {
+    const active = Boolean(document.fullscreenElement);
+    const topIcon = $('#fullscreen-btn .material-symbols-rounded');
+    if (topIcon) topIcon.textContent = active ? 'fullscreen_exit' : 'fullscreen';
+    const b = $('#btn-browser-fullscreen');
+    if (!b) return;
+    b.classList.toggle('btn-active', active);
+    const tag = b.querySelector('.btn-tag');
+    if (tag) tag.textContent = active ? 'EXIT' : 'tablet view';
   }
   function paintMode() {
     $('#btn-mode-3').classList.toggle('btn-active', STATE.activeMode === 3);
