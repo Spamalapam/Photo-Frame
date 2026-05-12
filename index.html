@@ -1079,10 +1079,14 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
           <span>Sync from Drive</span>
           <span class="material-symbols-rounded" style="font-size:18px">cloud_sync</span>
         </button>
+        <button class="pro-btn" id="btn-guest-drive">
+          Guest Photo Set <span class="btn-tag">OFF</span>
+        </button>
         <div id="drive-status">Not configured.</div>
         <div class="help-text">
           Drag photos or videos into your shared Drive folder from any device. The frame fetches them via the baked-in Drive API settings.
-          <a href="#" id="open-drive-folder" style="color:var(--accent);">open the folder</a>
+          <a href="#" id="open-drive-folder" style="color:var(--accent);">open active folder</a>
+          · <a href="#" id="open-guest-drive-folder" style="color:var(--accent);">guest folder</a>
         </div>
       </div>
 
@@ -1212,6 +1216,8 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
   const DEFAULT_DRIVE_API_KEY = 'AIzaSyCV3jO5ueYzlVgitH-UUxYC2or5zT0Xghk';
   const DEFAULT_DRIVE_FOLDER_ID = '1VN_d4wvVgWbtr3kzyyygO_XthVFZPXfY';
   const DEFAULT_DRIVE_FOLDER_URL = 'https://drive.google.com/drive/folders/1VN_d4wvVgWbtr3kzyyygO_XthVFZPXfY?usp=share_link';
+  const DEFAULT_GUEST_DRIVE_FOLDER_ID = '1_ztOBSUjjiFBeV_vQNtSLLCWrqkk1xL-';
+  const DEFAULT_GUEST_DRIVE_FOLDER_URL = 'https://drive.google.com/drive/folders/1_ztOBSUjjiFBeV_vQNtSLLCWrqkk1xL-?usp=sharing';
   const AMERICAN_FORK_WEATHER = Object.freeze({
     lat: 40.3769,
     lon: -111.7958,
@@ -1245,6 +1251,8 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
       lastSync: 0,
       gdKey: DEFAULT_DRIVE_API_KEY,
       gdFolder: DEFAULT_DRIVE_FOLDER_ID,
+      guestDriveFolder: DEFAULT_GUEST_DRIVE_FOLDER_ID,
+      guestMode: false,
       gdAccount: 'runner4evs@gmail.com',
       lastDriveSync: 0,
       primarySource: 'drive', // 'drive' | 'github' | 'local'
@@ -1276,6 +1284,8 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
       layoutVersion,
       gdKey: DEFAULT_DRIVE_API_KEY,
       gdFolder: DEFAULT_DRIVE_FOLDER_ID,
+      guestDriveFolder: DEFAULT_GUEST_DRIVE_FOLDER_ID,
+      guestMode: Boolean(s.guestMode),
       gdAccount: 'runner4evs@gmail.com',
       primarySource: 'drive',
       brightness: Math.round(clamp(Number(s.brightness || 100), 20, 100) / 5) * 5,
@@ -1377,7 +1387,14 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
   }
 
   function migrateDriveMediaRecord(rec) {
-    if (!rec || rec.source !== 'drive' || !rec.driveId || isVideoPhoto(rec)) return rec;
+    if (!rec || rec.source !== 'drive' || !rec.driveId) return rec;
+    if (isVideoPhoto(rec) || isGifPhoto(rec)) {
+      return {
+        ...rec,
+        url: driveFileMediaUrl(rec),
+        fallbackUrl: rec.thumbnailUrl || rec.fallbackUrl || rec.url
+      };
+    }
     const stableThumbnailUrl = driveStableThumbnailUrl(rec.driveId);
     return {
       ...rec,
@@ -1432,8 +1449,8 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
       // 1) Fetch the photos folder listing
       const apiUrl = `https://api.github.com/repos/${encodeURIComponent(ghOwner)}/${encodeURIComponent(ghRepo)}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
       const listing = await ghFetch(apiUrl);
-      const imageExts = /\.(jpe?g|png|gif|webp|avif|heic|bmp)$/i;
-      const items = (Array.isArray(listing) ? listing : []).filter(f => f.type === 'file' && imageExts.test(f.name));
+      const mediaExts = /\.(jpe?g|png|gif|webp|avif|heic|bmp|mp4|m4v|webm|mov)$/i;
+      const items = (Array.isArray(listing) ? listing : []).filter(f => f.type === 'file' && mediaExts.test(f.name));
       if (items.length === 0) {
         setSyncStatus('warn', 'Folder is empty');
         toast(`No images found in /${path}`);
@@ -1553,32 +1570,50 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
     return url.replace(/=s\d+.*$/, '=w2200-h2200');
   }
 
+  function driveFileMediaUrl(fileOrId, gdKey = STATE.settings.gdKey) {
+    const id = typeof fileOrId === 'string' ? fileOrId : (fileOrId.driveId || fileOrId.id);
+    return `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}?alt=media&key=${encodeURIComponent(gdKey)}`;
+  }
+
   function driveStableThumbnailUrl(fileOrId) {
-    const id = typeof fileOrId === 'string' ? fileOrId : fileOrId.id;
+    const id = typeof fileOrId === 'string' ? fileOrId : (fileOrId.driveId || fileOrId.id);
     return `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w2200`;
   }
 
   function driveMediaUrls(file, gdKey) {
-    const apiUrl = `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media&key=${encodeURIComponent(gdKey)}`;
+    const apiUrl = driveFileMediaUrl(file, gdKey);
     const downloadUrl = file.webContentLink || `https://drive.google.com/uc?export=download&id=${encodeURIComponent(file.id)}`;
     const thumbnailUrl = upgradeDriveThumbnail(file.thumbnailLink);
     const stableThumbnailUrl = driveStableThumbnailUrl(file);
     if (/^video\//.test(file.mimeType || '')) {
-      return { url: downloadUrl, fallbackUrl: apiUrl, thumbnailUrl: stableThumbnailUrl || thumbnailUrl };
+      return { url: apiUrl, fallbackUrl: stableThumbnailUrl || thumbnailUrl || downloadUrl, thumbnailUrl: stableThumbnailUrl || thumbnailUrl };
+    }
+    if (/^image\/gif$/i.test(file.mimeType || '') || /\.gif$/i.test(file.name || '')) {
+      return { url: apiUrl, fallbackUrl: stableThumbnailUrl || thumbnailUrl || downloadUrl, thumbnailUrl: stableThumbnailUrl || thumbnailUrl };
     }
     return { url: stableThumbnailUrl, fallbackUrl: thumbnailUrl || downloadUrl || apiUrl, thumbnailUrl: stableThumbnailUrl };
+  }
+
+  function activeDriveFolderId() {
+    return STATE.settings.guestMode ? STATE.settings.guestDriveFolder : STATE.settings.gdFolder;
+  }
+
+  function activeDriveFolderUrl() {
+    return STATE.settings.guestMode ? DEFAULT_GUEST_DRIVE_FOLDER_URL : DEFAULT_DRIVE_FOLDER_URL;
   }
 
   async function syncFromDrive() {
     if (STATE.syncing) return;
     // Auto-clean the folder ID in case user pasted a full URL
     STATE.settings.gdFolder = extractDriveFolderId(STATE.settings.gdFolder);
+    STATE.settings.guestDriveFolder = extractDriveFolderId(STATE.settings.guestDriveFolder);
     saveSettings();
     $('#gd-folder').value = STATE.settings.gdFolder;
-    const { gdKey, gdFolder } = STATE.settings;
+    const gdKey = STATE.settings.gdKey;
+    const gdFolder = activeDriveFolderId();
     if (!gdKey || !gdFolder) { toast('Set the Drive API key and folder ID first'); return; }
 
-    setSyncStatus('syncing', 'Listing Drive folder…');
+    setSyncStatus('syncing', STATE.settings.guestMode ? 'Listing guest Drive folder…' : 'Listing Drive folder…');
     STATE.syncing = true;
 
     try {
@@ -1638,6 +1673,7 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
             fallbackUrl: urls.fallbackUrl,
             thumbnailUrl: urls.thumbnailUrl,
             source: 'drive',
+            driveScope: STATE.settings.guestMode ? 'guest' : 'main',
             mimeType: f.mimeType || '',
             file: f.name,
             caption: m.caption || '',
@@ -1662,7 +1698,7 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
       renderCorkBoard();
       setSyncStatus('ok', `Synced ${done} from Drive`);
       setTimeout(() => $('#sync-status').classList.remove('visible'), 4000);
-      toast(`Synced ${done} photos/videos from Google Drive`);
+      toast(`Synced ${done} photos/videos from ${STATE.settings.guestMode ? 'guest ' : ''}Google Drive`);
       updateDriveStatus();
     } catch (e) {
       console.error(e);
@@ -1685,7 +1721,8 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
 
   function updateDriveStatus() {
     const el = $('#drive-status');
-    const { gdKey, gdFolder, lastDriveSync, gdAccount } = STATE.settings;
+    const { gdKey, lastDriveSync, gdAccount, guestMode } = STATE.settings;
+    const gdFolder = activeDriveFolderId();
     if (!gdFolder || !gdKey) {
       el.textContent = !gdFolder
         ? 'Folder ID missing.'
@@ -1694,7 +1731,7 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
       return;
     }
     const last = lastDriveSync ? new Date(lastDriveSync).toLocaleString() : 'never';
-    el.textContent = `Account: ${gdAccount || '(public folder)'}\nFolder: …${gdFolder.slice(-10)}\nLast sync: ${last}`;
+    el.textContent = `Mode: ${guestMode ? 'Guest photo set' : 'Main family folder'}\nAccount: ${gdAccount || '(public folder)'}\nFolder: …${gdFolder.slice(-10)}\nLast sync: ${last}`;
     el.className = 'ok';
   }
 
@@ -1782,11 +1819,11 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
         { x: 86.5, y: 29, w: 23.5, h: 50, rot: 2.0,  style: 'polaroid', clip: false, tape: true }
       ],
       5: [
-        { x: 18, y: 22, w: 29, h: 36, rot: -2.5, style: 'polaroid', clip: false, tape: true },
-        { x: 50, y: 20, w: 29, h: 36, rot: 1.2,  style: 'polaroid', clip: true,  tape: false },
-        { x: 82, y: 22, w: 29, h: 36, rot: -1.4, style: 'polaroid', clip: false, tape: true },
-        { x: 35, y: 56, w: 32, h: 30, rot: 1.9,  style: 'polaroid', clip: false, tape: true },
-        { x: 65, y: 56, w: 32, h: 30, rot: -2.0, style: 'polaroid', clip: true,  tape: false }
+        { x: 18, y: 22, w: 30, h: 38, rot: -2.5, style: 'polaroid', clip: false, tape: true },
+        { x: 50, y: 20, w: 30, h: 38, rot: 1.2,  style: 'polaroid', clip: true,  tape: false },
+        { x: 82, y: 22, w: 30, h: 38, rot: -1.4, style: 'polaroid', clip: false, tape: true },
+        { x: 35, y: 56, w: 33, h: 32, rot: 1.9,  style: 'polaroid', clip: false, tape: true },
+        { x: 65, y: 56, w: 33, h: 32, rot: -2.0, style: 'polaroid', clip: true,  tape: false }
       ]
     };
     return presets[n];
@@ -1794,6 +1831,37 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
 
   function isVideoPhoto(photo) {
     return /^video\//.test(photo.mimeType || '') || /\.(mp4|m4v|webm|mov)$/i.test(photo.file || '');
+  }
+
+  function isGifPhoto(photo) {
+    return /^image\/gif$/i.test(photo.mimeType || '') || /\.gif$/i.test(photo.file || photo.name || '');
+  }
+
+  function handleMediaFailure(media, photo, box, onReady) {
+    photo._mediaFailed = true;
+    if (photo.fallbackUrl && media.src !== photo.fallbackUrl) {
+      media.src = photo.fallbackUrl;
+      return;
+    }
+    if (box && STATE.activeMode === 3) {
+      const replacement = findReplacementPhotoForBox(box);
+      if (replacement) {
+        changePhotoInBox(box, replacement);
+        return;
+      }
+    }
+    media.classList.add('loaded');
+    media.alt = 'Media unavailable';
+    onReady && onReady(media);
+  }
+
+  function findReplacementPhotoForBox(box) {
+    const shown = new Set($$('.img-box', $('#photo-wrapper'))
+      .filter(b => b !== box)
+      .map(b => b.dataset.photoId));
+    return STATE.photos.find(p => !shown.has(p.id) && !p._mediaFailed) ||
+      STATE.photos.find(p => !shown.has(p.id)) ||
+      null;
   }
 
   function createMediaElement(photo, box, onReady) {
@@ -1818,8 +1886,8 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
         if (photo.thumbnailUrl && media.parentNode) {
           const fallback = createMediaElement({ ...photo, mimeType: 'image/jpeg', url: photo.thumbnailUrl, fallbackUrl: '' }, box, onReady);
           media.parentNode.replaceChild(fallback, media);
-        } else if (box) {
-          box.style.display = 'none';
+        } else {
+          handleMediaFailure(media, photo, box, onReady);
         }
       }, { once: true });
     } else {
@@ -1830,8 +1898,8 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
       media.onerror = () => {
         if (photo.fallbackUrl && media.src !== photo.fallbackUrl) {
           media.src = photo.fallbackUrl;
-        } else if (box) {
-          box.style.display = 'none';
+        } else {
+          handleMediaFailure(media, photo, box, onReady);
         }
       };
     }
@@ -1864,8 +1932,8 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
     const preferredH = preferredW / safeAspect;
     const maxW = baseW;
     const maxH = baseH;
-    const minW = baseW * 0.84;
-    const minH = baseH * 0.84;
+    const minW = baseW * 0.9;
+    const minH = baseH * 0.9;
     const scaleDown = Math.min(1, maxW / preferredW, maxH / preferredH);
     let pxW = preferredW * scaleDown;
     let pxH = preferredH * scaleDown;
@@ -2161,7 +2229,7 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
     }
     // Pick a photo not currently shown
     const shown = $$('.img-box', $('#photo-wrapper')).map(b => b.dataset.photoId);
-    const candidates = preferredPhoto ? [preferredPhoto] : STATE.photos.filter(p => !shown.includes(p.id));
+    const candidates = preferredPhoto ? [preferredPhoto] : STATE.photos.filter(p => !shown.includes(p.id) && !p._mediaFailed);
     if (candidates.length === 0) return;
     const next = pick(candidates);
 
@@ -2361,11 +2429,23 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
       });
     });
     $('#btn-gd-sync').addEventListener('click', syncFromDrive);
+    $('#btn-guest-drive').addEventListener('click', () => {
+      STATE.settings.guestMode = !STATE.settings.guestMode;
+      STATE.settings.lastDriveSync = 0;
+      saveSettings();
+      paintToggle('#btn-guest-drive', STATE.settings.guestMode);
+      updateDriveStatus();
+      syncFromDrive();
+    });
     $('#open-drive-folder').addEventListener('click', (e) => {
       e.preventDefault();
-      const id = STATE.settings.gdFolder;
-      if (id) window.open(DEFAULT_DRIVE_FOLDER_URL, '_blank');
+      const id = activeDriveFolderId();
+      if (id) window.open(activeDriveFolderUrl(), '_blank');
       else toast('Set a folder ID first');
+    });
+    $('#open-guest-drive-folder').addEventListener('click', (e) => {
+      e.preventDefault();
+      window.open(DEFAULT_GUEST_DRIVE_FOLDER_URL, '_blank');
     });
 
     // Local upload
@@ -2445,6 +2525,7 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
     document.documentElement.style.setProperty('--transition-photos', STATE.settings.transitionSec + 's');
     paintToggle('#btn-auto-dim', STATE.settings.autoDim);
     paintToggle('#btn-photo-motion', STATE.settings.photoMotion);
+    paintToggle('#btn-guest-drive', STATE.settings.guestMode);
     paintToggle('#btn-strings', STATE.settings.strings);
     paintToggle('#btn-tape', STATE.settings.tape);
     paintArrange();

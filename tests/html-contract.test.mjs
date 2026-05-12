@@ -7,16 +7,33 @@ const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 test('Google Drive source is baked into the default settings', () => {
   assert.match(html, /DEFAULT_DRIVE_API_KEY\s*=\s*'AIzaSyCV3jO5ueYzlVgitH-UUxYC2or5zT0Xghk'/);
   assert.match(html, /DEFAULT_DRIVE_FOLDER_ID\s*=\s*'1VN_d4wvVgWbtr3kzyyygO_XthVFZPXfY'/);
+  assert.match(html, /DEFAULT_GUEST_DRIVE_FOLDER_ID\s*=\s*'1_ztOBSUjjiFBeV_vQNtSLLCWrqkk1xL-'/);
   assert.match(html, /gdKey:\s*DEFAULT_DRIVE_API_KEY/);
   assert.match(html, /gdFolder:\s*DEFAULT_DRIVE_FOLDER_ID/);
+  assert.match(html, /guestDriveFolder:\s*DEFAULT_GUEST_DRIVE_FOLDER_ID/);
 });
 
 test('Drive sync and rendering support photos and videos', () => {
   assert.match(html, /mimeType contains 'image\/' or mimeType contains 'video\/'/);
   assert.match(html, /function createMediaElement/);
   assert.match(html, /document\.createElement\('video'\)/);
+  assert.match(html, /function isGifPhoto/);
   assert.match(html, /function migrateDriveMediaRecord/);
   assert.match(html, /drive\.google\.com\/thumbnail/);
+  assert.match(html, /driveFileMediaUrl/);
+  assert.match(html, /mp4\|m4v\|webm\|mov/);
+});
+
+test('Media failures do not remove Polaroids from the board', () => {
+  assert.match(html, /function handleMediaFailure/);
+  assert.doesNotMatch(html, /box\.style\.display\s*=\s*'none'/);
+});
+
+test('Guest Drive folder can be toggled on and off', () => {
+  assert.match(html, /id="btn-guest-drive"/);
+  assert.match(html, /guestMode:\s*false/);
+  assert.match(html, /guestDriveFolder/);
+  assert.match(html, /function activeDriveFolderId/);
 });
 
 test('Cork board has auto arrange, manual move, tap-to-change, and lock controls', () => {
