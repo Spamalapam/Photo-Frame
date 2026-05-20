@@ -64,6 +64,13 @@ test('Auto layout is capped to 5 photos with 3-photo default and media aspect fi
   assert.match(html, /object-fit: contain/);
 });
 
+test('Three-photo auto layout staggers photos instead of using one shallow row', () => {
+  assert.match(html, /x:\s*22,\s*y:\s*27,\s*w:\s*37,\s*h:\s*40/);
+  assert.match(html, /x:\s*77,\s*y:\s*27,\s*w:\s*37,\s*h:\s*40/);
+  assert.match(html, /x:\s*50,\s*y:\s*66,\s*w:\s*40,\s*h:\s*32/);
+  assert.match(html, /82 - h \/ 2/);
+});
+
 test('Night dimming and optional gentle photo motion are configurable', () => {
   assert.match(html, /id="btn-auto-dim"/);
   assert.match(html, /id="night-brightness-slider"/);
