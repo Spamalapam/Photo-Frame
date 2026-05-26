@@ -67,10 +67,14 @@ test('Auto layout is capped to 5 photos with 3-photo default and media aspect fi
 test('Three-photo auto layout is chosen from the full visible photo aspect mix', () => {
   assert.match(html, /function classifyPhotoAspect/);
   assert.match(html, /function generateThreePhotoSlots/);
-  assert.match(html, /portraitCount\s*===\s*1\s*&&\s*landscapeCount\s*>=\s*2/);
-  assert.match(html, /portraitCount\s*===\s*2/);
-  assert.match(html, /portraitCount\s*===\s*3/);
-  assert.match(html, /squareCount\s*>=\s*2/);
+  assert.match(html, /function candidateThreePhotoLayouts/);
+  assert.match(html, /function fitSlotsForAspects/);
+  assert.match(html, /function scoreThreePhotoLayout/);
+  assert.match(html, /function overlapPenalty/);
+  assert.match(html, /bestScore/);
+  assert.match(html, /wideTopTwoTall/);
+  assert.match(html, /leftTallRightStack/);
+  assert.match(html, /threePortraitColumns/);
   assert.match(html, /generateCorkSlots\(photos\.length,\s*undefined,\s*undefined,\s*photos\.map\(p => p\?\.aspect\)\)/);
   assert.match(html, /function relayoutCorkBoard/);
   assert.match(html, /relayoutCorkBoard\(\)/);
