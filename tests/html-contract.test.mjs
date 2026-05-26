@@ -99,4 +99,10 @@ test('Weather is locked to American Fork, Utah', () => {
   assert.match(html, /label:\s*'American Fork, UT'/);
   assert.match(html, /lat:\s*40\.3769/);
   assert.match(html, /lon:\s*-111\.7958/);
+  assert.match(html, /function fetchOpenMeteoWeather/);
+  assert.match(html, /function fetchNwsWeather/);
+  assert.match(html, /api\.weather\.gov\/points/);
+  assert.match(html, /forecastHourly/);
+  assert.match(html, /function renderWeather/);
+  assert.match(html, /weather unavailable/);
 });

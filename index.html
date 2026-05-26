@@ -2522,28 +2522,126 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
     80: 'Showers', 81: 'Showers', 82: 'Heavy showers',
     95: 'Thunderstorm', 96: 'Thunderstorm', 99: 'Severe thunder'
   };
+
+  function weatherIconForText(text, code) {
+    if (code != null && WEATHER_ICONS[code]) return WEATHER_ICONS[code];
+    const value = String(text || '').toLowerCase();
+    if (/thunder|storm/.test(value)) return 'thunderstorm';
+    if (/snow|sleet|ice/.test(value)) return 'cloudy_snowing';
+    if (/rain|shower|drizzle/.test(value)) return 'rainy';
+    if (/fog|mist|haze/.test(value)) return 'foggy';
+    if (/clear|sun/.test(value)) return 'wb_sunny';
+    if (/partly|mostly/.test(value)) return 'partly_cloudy_day';
+    return 'cloud';
+  }
+
+  function windMphFromText(text) {
+    const values = String(text || '').match(/\d+/g);
+    if (!values || values.length === 0) return null;
+    return Math.max(...values.map(Number));
+  }
+
+  async function fetchWeatherJson(url, options = {}) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 9000);
+    try {
+      const r = await fetch(url, { ...options, signal: controller.signal });
+      if (!r.ok) throw new Error(`weather ${r.status}`);
+      return await r.json();
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  async function fetchOpenMeteoWeather() {
+    const { lat, lon } = AMERICAN_FORK_WEATHER;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto`;
+    const j = await fetchWeatherJson(url);
+    const c = j.current;
+    const d = j.daily;
+    if (!c || !d) throw new Error('weather data missing');
+    const code = c.weather_code;
+    return {
+      temp: c.temperature_2m,
+      feelsLike: c.apparent_temperature,
+      humidity: c.relative_humidity_2m,
+      windMph: c.wind_speed_10m,
+      condition: WEATHER_TEXT[code] || '—',
+      icon: WEATHER_ICONS[code] || 'cloud',
+      tomorrowCondition: WEATHER_TEXT[d.weather_code?.[1]] || '—',
+      tomorrowMin: d.temperature_2m_min?.[1],
+      tomorrowMax: d.temperature_2m_max?.[1],
+      source: 'Open-Meteo'
+    };
+  }
+
+  async function fetchNwsWeather() {
+    const { lat, lon } = AMERICAN_FORK_WEATHER;
+    const pointUrl = `https://api.weather.gov/points/${lat},${lon}`;
+    const point = await fetchWeatherJson(pointUrl, { headers: { Accept: 'application/geo+json' } });
+    const forecastHourly = point.properties?.forecastHourly;
+    if (!forecastHourly) throw new Error('NWS hourly forecast missing');
+    const hourly = await fetchWeatherJson(forecastHourly, { headers: { Accept: 'application/geo+json' } });
+    const periods = hourly.properties?.periods || [];
+    const current = periods[0];
+    if (!current) throw new Error('NWS current period missing');
+    const currentDate = new Date(current.startTime);
+    const tomorrowDate = new Date(currentDate);
+    tomorrowDate.setDate(currentDate.getDate() + 1);
+    const tomorrowKey = tomorrowDate.toLocaleDateString('en-CA', { timeZone: 'America/Denver' });
+    const tomorrowPeriods = periods.filter(period =>
+      new Date(period.startTime).toLocaleDateString('en-CA', { timeZone: 'America/Denver' }) === tomorrowKey
+    );
+    const tomorrowDay = tomorrowPeriods.find(period => period.isDaytime) || tomorrowPeriods[0] || current;
+    const tomorrowTemps = tomorrowPeriods.map(period => Number(period.temperature)).filter(Number.isFinite);
+    return {
+      temp: current.temperature,
+      feelsLike: current.temperature,
+      humidity: current.relativeHumidity?.value,
+      windMph: windMphFromText(current.windSpeed),
+      condition: current.shortForecast || '—',
+      icon: weatherIconForText(current.shortForecast),
+      tomorrowCondition: tomorrowDay.shortForecast || '—',
+      tomorrowMin: tomorrowTemps.length ? Math.min(...tomorrowTemps) : tomorrowDay.temperature,
+      tomorrowMax: tomorrowTemps.length ? Math.max(...tomorrowTemps) : tomorrowDay.temperature,
+      source: 'NWS'
+    };
+  }
+
+  function renderWeather(weather, stale = false) {
+    const { label } = AMERICAN_FORK_WEATHER;
+    $('#temp').textContent = Number.isFinite(Number(weather.temp)) ? Math.round(weather.temp) + '°' : '--°';
+    $('#condition').textContent = stale ? `${weather.condition || 'weather'} · cached` : (weather.condition || '—');
+    $('#weather-icon').textContent = weather.icon || weatherIconForText(weather.condition);
+    const feels = Number.isFinite(Number(weather.feelsLike)) ? Math.round(weather.feelsLike) + '°' : '—';
+    const humidity = Number.isFinite(Number(weather.humidity)) ? Math.round(weather.humidity) + '%' : '—';
+    const wind = Number.isFinite(Number(weather.windMph)) ? Math.round(weather.windMph) + ' mph' : '—';
+    $('#weather-details').innerHTML =
+      `${label} · feels ${feels}<br>` +
+      `humidity ${humidity} · wind ${wind}`;
+    const min = Number.isFinite(Number(weather.tomorrowMin)) ? Math.round(weather.tomorrowMin) + '°' : '—';
+    const max = Number.isFinite(Number(weather.tomorrowMax)) ? Math.round(weather.tomorrowMax) + '°' : '—';
+    $('#weather-tomorrow').textContent =
+      `tomorrow · ${weather.tomorrowCondition || '—'} · ${min} / ${max}`;
+  }
+
   async function updateWeather() {
     STATE.settings.location = { ...AMERICAN_FORK_WEATHER };
-    const { lat, lon, label } = AMERICAN_FORK_WEATHER;
     try {
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto`;
-      const r = await fetch(url);
-      if (!r.ok) throw new Error('weather');
-      const j = await r.json();
-      const c = j.current;
-      const code = c.weather_code;
-      $('#temp').textContent = Math.round(c.temperature_2m) + '°';
-      $('#condition').textContent = WEATHER_TEXT[code] || '—';
-      $('#weather-icon').textContent = WEATHER_ICONS[code] || 'cloud';
-      $('#weather-details').innerHTML =
-        `${label} · feels ${Math.round(c.apparent_temperature)}°<br>` +
-        `humidity ${c.relative_humidity_2m}% · wind ${Math.round(c.wind_speed_10m)} mph`;
-      const d = j.daily;
-      $('#weather-tomorrow').textContent =
-        `tomorrow · ${WEATHER_TEXT[d.weather_code[1]] || '—'} · ` +
-        `${Math.round(d.temperature_2m_min[1])}° / ${Math.round(d.temperature_2m_max[1])}°`;
+      const weather = await fetchOpenMeteoWeather().catch(() => fetchNwsWeather());
+      renderWeather(weather);
+      save('frame-weather-cache', { ...weather, cachedAt: Date.now() });
     } catch (e) {
-      $('#condition').textContent = 'weather offline';
+      const cached = load('frame-weather-cache', null);
+      if (cached) {
+        renderWeather(cached, true);
+        return;
+      }
+      $('#temp').textContent = '--°';
+      $('#condition').textContent = 'weather unavailable';
+      $('#weather-icon').textContent = 'cloud_off';
+      $('#weather-details').innerHTML = `${AMERICAN_FORK_WEATHER.label} · check connection<br>humidity — · wind —`;
+      $('#weather-tomorrow').textContent = 'tomorrow: —';
     }
   }
 
