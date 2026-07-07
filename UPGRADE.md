@@ -1,5 +1,58 @@
 # Photo-Frame v2 — upgrade notes
 
+## v2.1 — smooth switching, offline photos, portrait layout
+
+Nothing removed — every upgrade below is additive.
+
+**Glitch-free photo switching** (the headline fix):
+
+- **Layered crossfade.** The incoming photo now fades in *on top of* the old
+  one, which stays fully opaque underneath until the fade completes — the old
+  double-fade let the paper background flash through mid-transition.
+- **Decode before fade.** Images are decoded off the main thread
+  (`img.decode()`) before the fade starts, so big JPEGs no longer stutter on
+  first paint.
+- **Swap tokens.** Rapid taps / slow networks can no longer race two in-flight
+  swaps into a blank or flickering polaroid — a newer swap cancels the older.
+- **No more board lurch.** A swapped photo refits only its own polaroid.
+  Previously every image load re-scored the whole board layout, so all three
+  polaroids bounced around on every switch. Full re-layout still happens where
+  it should (mode change, count change, sync, rotation/resize).
+- **Preloading.** The next photo is picked and warmed into the browser cache
+  ahead of the cycle timer, so the swap starts instantly.
+- **Single Photo mode crossfades in place.** It used to clear to black and
+  then load the next photo from the network.
+- **Offline photo cache.** After each Drive sync the frame quietly downloads
+  each image once (downscaled to tablet resolution) into IndexedDB — swaps
+  then come from local storage, instant and immune to Wi-Fi blips. Toggle in
+  Settings → Google Drive → *Offline Photo Cache* (default ON). Videos keep
+  streaming.
+
+**Galaxy Tab S7+ layout:**
+
+- **Portrait support.** The sticky widgets wrap (time + weather up top, agenda
+  beneath) instead of overflowing off the right edge; photo slots already had
+  a compact portrait mode. Rotating the tablet now re-lays-out the board live.
+- **Dynamic viewport height (`100dvh`)** so the bottom widgets aren't cropped
+  when the browser address bar is visible.
+- **Safe-area insets** for the rounded corners / camera cutout.
+
+**New:**
+
+- **Swipe next/previous** in Single Photo mode (left = next, right = back);
+  the cycle timer resets so the chosen photo gets its full time.
+- **PWA shell.** `manifest.json` + `sw.js` service worker keep the page, cork
+  texture, and fonts working with no network, and make *Add to Home screen*
+  install as a proper fullscreen app with its own icon.
+- **Per-photo Ken Burns drift** — each photo gets its own direction, speed,
+  and amplitude instead of every photo drifting identically in lockstep.
+- **Minute-aligned clock** — the time flips exactly on the minute boundary
+  (it could previously lag up to 30 s).
+- Deterministic yarn-string sag (strings no longer wiggle on every redraw),
+  and persistent-storage request so Android doesn't evict cached photos.
+
+---
+
 Drop-in upgrade for `Spamalapam/Photo-Frame`, optimized for the Galaxy Tab S7+
 in landscape. Cork-forward, with remote photo album sync via GitHub.
 

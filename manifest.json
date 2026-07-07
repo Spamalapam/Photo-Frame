@@ -1,0 +1,14 @@
+{
+  "name": "Adam's Cork Frame",
+  "short_name": "Cork Frame",
+  "description": "Family photo frame — a cork board of polaroids with clock, agenda, and weather.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#1a0f06",
+  "theme_color": "#a47148",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

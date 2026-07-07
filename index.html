@@ -10,8 +10,9 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Caveat:wght@400;600;700&family=Kalam:wght@300;400;700&family=Shadows+Into+Light&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,1,0" />
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Caveat:wght@400;600;700&family=Kalam:wght@300;400;700&family=Shadows+Into+Light&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,1,0" crossorigin="anonymous" />
+<link rel="manifest" href="manifest.json" />
 
 <style>
 /* =============================================================
@@ -410,24 +411,29 @@ body {
     transform calc(var(--transition-photos) * 1.6) ease-out;
   pointer-events: none;
   display: block;
+  will-change: opacity, transform;
+  backface-visibility: hidden;
 }
 .media-item.loaded { opacity: 1; transform: scale(1); }
 .mode-3 .media-item { object-fit: contain; }
 video.media-item { background: #111; }
 
+/* Retiring photo: it stays fully visible UNDER the incoming photo during the
+   crossfade (no half-transparent flash), then melts away quickly once the new
+   one has fully faded in. */
 .media-container .media-item.fading-out {
   position: absolute; top: 0; left: 0;
   opacity: 0;
   transform: scale(1);
-  transition: opacity var(--transition-photos) ease;
+  transition: opacity 0.38s ease;
 }
 
 /* Ken Burns drift */
 body:not(.motion-on) .ken-burns { animation: none !important; }
-body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
+body.motion-on .ken-burns { animation: kb 26s infinite alternate ease-in-out; }
 @keyframes kb {
   0%   { transform: scale(1.0)  translate(0%,    0%); }
-  100% { transform: scale(1.045) translate(-0.8%, -0.7%); }
+  100% { transform: scale(var(--kb-scale, 1.045)) translate(var(--kb-x, -0.8%), var(--kb-y, -0.7%)); }
 }
 
 /* Caption on polaroid bottom (handwritten) */
@@ -471,9 +477,9 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
 
 #sticky-container {
   position: absolute;
-  bottom: 28px; left: 0;
+  bottom: calc(28px + env(safe-area-inset-bottom, 0px)); left: 0;
   width: 100%;
-  padding: 0 36px;
+  padding: 0 max(36px, env(safe-area-inset-right, 0px)) 0 max(36px, env(safe-area-inset-left, 0px));
   box-sizing: border-box;
   display: flex;
   justify-content: space-between;
@@ -643,7 +649,8 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
    ===================================================== */
 #top-bar {
   position: absolute;
-  top: 28px; right: 28px;
+  top: calc(28px + env(safe-area-inset-top, 0px));
+  right: calc(28px + env(safe-area-inset-right, 0px));
   display: flex;
   gap: 14px;
   z-index: 250;
@@ -947,6 +954,26 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
   #settings-panel { width: 100%; right: -100%; }
 }
 
+/* Portrait tablet (S7+ held upright): wrap the sticky row so nothing
+   overflows off the right edge — time + weather up top, agenda beneath. */
+@media (min-width: 721px) and (max-width: 1080px) and (orientation: portrait) {
+  #sticky-container { flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 16px; }
+  #agenda-box { order: 3; }
+  #time-widget { min-width: 190px; }
+  #weather-box { min-width: 240px; }
+  #time-display { font-size: 3.4rem; }
+  #temp { font-size: 3rem; }
+  .day-date { font-size: 2rem; }
+}
+
+/* Dynamic viewport units: when the browser chrome (address bar) is showing,
+   100vh overshoots on Android and crops the bottom widgets — dvh tracks the
+   real visible height. Fullscreen/kiosk mode is unaffected. */
+@supports (height: 100dvh) {
+  html, body { height: 100dvh; }
+  #container { height: 100dvh; }
+}
+
 /* High-DPI tablet fine-tuning (S7+) */
 @media (min-width: 1280px) {
   #time-display { font-size: 5rem; }
@@ -1082,6 +1109,10 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
         <button class="pro-btn" id="btn-guest-drive">
           Guest Photo Set <span class="btn-tag">OFF</span>
         </button>
+        <button class="pro-btn" id="btn-offline-cache">
+          Offline Photo Cache <span class="btn-tag">ON</span>
+        </button>
+        <div id="offline-cache-status" class="help-text" style="margin-top:0;">Photos save to the tablet after each sync for instant, offline display.</div>
         <div id="drive-status">Not configured.</div>
         <div class="help-text">
           Drag photos or videos into your shared Drive folder from any device. The frame fetches them via the baked-in Drive API settings.
@@ -1185,8 +1216,9 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
       <div class="setting-group">
         <span class="setting-label">About</span>
         <div class="help-text">
-          v2 · cork-forward · optimized for Galaxy Tab S7+ landscape.<br>
-          Photos and videos load from Google Drive and cache offline.<br>
+          v2.1 · cork-forward · optimized for Galaxy Tab S7+ (landscape &amp; portrait).<br>
+          Photos and videos load from Google Drive, save to the tablet, and keep working offline.<br>
+          Smooth crossfades with photo preloading. In Single Photo mode, swipe left/right for next/previous.<br>
           Tap settings → Sync from Drive to refresh immediately.
         </div>
       </div>
@@ -1244,6 +1276,7 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
       manualSlots: {},
       lockedSlots: {},
       screenWake: false,
+      offlineCache: true,
       ghOwner: '',
       ghRepo: '',
       ghPath: 'photos',
@@ -1262,7 +1295,9 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
     cycleTimer: null,
     wakeLock: null,
     db: null,
-    syncing: false
+    syncing: false,
+    nextPhoto: null,      // pre-picked photo for the upcoming rotation
+    preloadImg: null      // held reference so the preload fetch isn't cancelled
   };
 
   // ---------- Util ----------
@@ -1297,6 +1332,7 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
       arrangeMode: s.arrangeMode === 'manual' ? 'manual' : 'auto',
       manualSlots: s.manualSlots || {},
       lockedSlots: s.lockedSlots || {},
+      offlineCache: s.offlineCache !== false,
       location: { ...AMERICAN_FORK_WEATHER }
     };
   }
@@ -1700,6 +1736,8 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
       setTimeout(() => $('#sync-status').classList.remove('visible'), 4000);
       toast(`Synced ${done} photos/videos from ${STATE.settings.guestMode ? 'guest ' : ''}Google Drive`);
       updateDriveStatus();
+      // Start saving the fresh set to the tablet once syncing has settled
+      setTimeout(backgroundCacheDrivePhotos, 1200);
     } catch (e) {
       console.error(e);
       let hint = e.message || 'Sync failed';
@@ -1733,6 +1771,95 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
     const last = lastDriveSync ? new Date(lastDriveSync).toLocaleString() : 'never';
     el.textContent = `Mode: ${guestMode ? 'Guest photo set' : 'Main family folder'}\nAccount: ${gdAccount || '(public folder)'}\nFolder: …${gdFolder.slice(-10)}\nLast sync: ${last}`;
     el.className = 'ok';
+  }
+
+  // ---------- Offline photo cache (Drive → IndexedDB blobs) ----------
+  // Drive photos normally stream from the network on every swap, which is
+  // exactly when a slow Wi-Fi moment shows up as a glitch. After each sync we
+  // quietly download each image once (downscaled to tablet resolution) into
+  // IndexedDB, so swaps come from local storage and survive Wi-Fi outages.
+  const OFFLINE = { running: false };
+
+  function isQuotaError(e) {
+    return Boolean(e && (e.name === 'QuotaExceededError' || /quota/i.test(e.message || '')));
+  }
+
+  async function downscaleImageBlob(blob, maxDim = 2400, quality = 0.86) {
+    try {
+      const bmp = await createImageBitmap(blob);
+      const scale = Math.min(1, maxDim / Math.max(bmp.width, bmp.height));
+      const w = Math.max(1, Math.round(bmp.width * scale));
+      const h = Math.max(1, Math.round(bmp.height * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(bmp, 0, 0, w, h);
+      bmp.close();
+      return await new Promise(res => canvas.toBlob(res, 'image/jpeg', quality));
+    } catch {
+      // Undecodable format (e.g. HEIC) — caller keeps streaming mode for it
+      return null;
+    }
+  }
+
+  async function fetchDriveImageBlob(rec) {
+    // The Drive API media endpoint supports CORS; the thumbnail endpoint doesn't.
+    const r = await fetch(driveFileMediaUrl(rec), { mode: 'cors' });
+    if (!r.ok) throw new Error('drive media ' + r.status);
+    const raw = await r.blob();
+    if (isGifPhoto(rec)) return raw.size <= 20 * 1024 * 1024 ? raw : null;
+    return await downscaleImageBlob(raw);
+  }
+
+  function offlineCacheStatus(text) {
+    const el = $('#offline-cache-status');
+    if (el) el.textContent = text;
+  }
+
+  async function backgroundCacheDrivePhotos() {
+    if (!STATE.settings.offlineCache || !STATE.db || OFFLINE.running) return;
+    OFFLINE.running = true;
+    try {
+      const all = await dbAll('photos');
+      const pending = all.filter(r => r.source === 'drive' && !r.blob && r.driveId && !isVideoPhoto(r));
+      const cachedCount = all.filter(r => r.source === 'drive' && r.blob).length;
+      const total = cachedCount + pending.length;
+      if (!pending.length) {
+        offlineCacheStatus(total
+          ? `All ${total} photos stored on the tablet for instant, offline display.`
+          : 'Waiting for the first Drive sync…');
+        return;
+      }
+      let done = cachedCount;
+      offlineCacheStatus(`Saving photos to the tablet… ${done}/${total}`);
+      for (const rec of pending) {
+        if (!STATE.settings.offlineCache || STATE.syncing) break;
+        try {
+          const blob = await fetchDriveImageBlob(rec);
+          if (blob) {
+            rec.blob = blob;
+            await dbPut(rec);
+            const live = STATE.photos.find(p => p.id === rec.id);
+            if (live && !live.blob) {
+              live.blob = blob;
+              live.url = URL.createObjectURL(blob);
+            }
+            done++;
+            offlineCacheStatus(`Saving photos to the tablet… ${done}/${total}`);
+          }
+        } catch (e) {
+          if (isQuotaError(e)) {
+            offlineCacheStatus('Tablet storage is full — remaining photos will stream from Drive.');
+            return;
+          }
+          // Individual failures (403, network blip) just stay in streaming mode
+        }
+        await new Promise(r => setTimeout(r, 400)); // gentle pace, stay smooth
+      }
+      offlineCacheStatus(`${done}/${total} photos stored on the tablet for instant, offline display.`);
+      updateStorageStatus();
+    } finally {
+      OFFLINE.running = false;
+    }
   }
 
   // ---------- Local folder load ----------
@@ -2023,6 +2150,13 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
   function createMediaElement(photo, box, onReady) {
     const media = isVideoPhoto(photo) ? document.createElement('video') : document.createElement('img');
     media.className = 'media-item ken-burns';
+    // Give every photo its own gentle drift so motion never looks mechanical
+    media.style.setProperty('--kb-scale', rand(1.03, 1.06).toFixed(3));
+    media.style.setProperty('--kb-x', rand(-1.1, 1.1).toFixed(2) + '%');
+    media.style.setProperty('--kb-y', rand(-0.9, 0.9).toFixed(2) + '%');
+    media.style.animationDuration = rand(22, 34).toFixed(1) + 's';
+    media.style.animationDelay = (-rand(0, 8)).toFixed(1) + 's';
+    if (media.tagName === 'IMG') media.decoding = 'async';
     media.src = photo.url;
     media.alt = photo.caption || '';
     if (media.tagName === 'VIDEO') {
@@ -2049,7 +2183,11 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
     } else {
       media.onload = () => {
         if (media.naturalWidth && media.naturalHeight) photo.aspect = media.naturalWidth / media.naturalHeight;
-        markMediaReady(media, photo, box, onReady);
+        // Decode off the main thread before fading in, so the crossfade
+        // never stutters on a big JPEG's first paint.
+        const finish = () => markMediaReady(media, photo, box, onReady);
+        if (media.decode) media.decode().then(finish).catch(finish);
+        else finish();
       };
       media.onerror = () => {
         if (photo.fallbackUrl && media.src !== photo.fallbackUrl) {
@@ -2065,7 +2203,10 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
   function markMediaReady(media, photo, box, onReady) {
     media.classList.add('loaded');
     if (box && STATE.activeMode === 3) {
-      relayoutCorkBoard();
+      // A photo swapped into an existing polaroid only refits its own box —
+      // re-scoring the whole board on every swap made all three lurch around.
+      if (box._swapRefitOnly) refitBoxToPhoto(box, photo);
+      else scheduleRelayout();
     }
     onReady && onReady(media);
   }
@@ -2131,16 +2272,49 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
     const photos = currentBoardPhotos();
     const slots = generateCorkSlots(photos.length, undefined, undefined, photos.map(p => p?.aspect));
     const stringSlots = [];
+    let moved = false;
     boxes.forEach((box, idx) => {
       const photo = photos[idx];
       const slot = slots[idx];
       if (!slot) return;
       box._baseSlot = { ...slot };
-      box._slot = currentSlotForBox(idx, slot, photo?.aspect);
-      applySlotToBox(box, box._slot);
+      const next = currentSlotForBox(idx, slot, photo?.aspect);
+      // Skip no-op moves: repositioning on every image load made the whole
+      // board twitch even when nothing actually changed.
+      if (!slotsRoughlyEqual(next, box._slot) && !box.classList.contains('dragging')) {
+        box._slot = next;
+        applySlotToBox(box, next);
+        moved = true;
+      }
       stringSlots.push(box._slot);
     });
-    drawStrings(stringSlots);
+    if (moved) drawStrings(stringSlots);
+  }
+
+  let relayoutQueued = false;
+  function scheduleRelayout() {
+    if (relayoutQueued) return;
+    relayoutQueued = true;
+    requestAnimationFrame(() => {
+      relayoutQueued = false;
+      relayoutCorkBoard();
+    });
+  }
+
+  function slotsRoughlyEqual(a, b) {
+    if (!a || !b) return false;
+    return ['x', 'y', 'w', 'h', 'rot'].every(k => Math.abs((a[k] || 0) - (b[k] || 0)) < 0.75);
+  }
+
+  // Refit a single polaroid to a new photo's aspect without disturbing the rest
+  function refitBoxToPhoto(box, photo) {
+    if (!box._baseSlot || box.classList.contains('dragging')) return;
+    const idx = +box.dataset.slotIdx;
+    const next = currentSlotForBox(idx, box._baseSlot, photo?.aspect);
+    if (slotsRoughlyEqual(next, box._slot)) return;
+    box._slot = next;
+    applySlotToBox(box, next);
+    drawStrings($$('.img-box', $('#photo-wrapper')).map(b => b._slot).filter(Boolean));
   }
 
   function isSlotLocked(idx) {
@@ -2252,6 +2426,7 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
 
     drawStrings(stringSlots);
     restartCycleTimer();
+    schedulePreload();
   }
 
   function pickPhotosForBoard(n) {
@@ -2341,17 +2516,28 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
 
   function renderFullscreen() {
     const wrapper = $('#photo-wrapper');
-    wrapper.innerHTML = '';
     const photo = STATE.photos[STATE.rotationIndex % Math.max(STATE.photos.length, 1)];
-    if (!photo) { renderEmptyState(); return; }
-    const box = document.createElement('div');
-    box.className = 'img-box';
-    const media = document.createElement('div');
-    media.className = 'media-container';
-    media.appendChild(createMediaElement(photo, box));
-    box.appendChild(media);
-    wrapper.appendChild(box);
+    if (!photo) { wrapper.innerHTML = ''; renderEmptyState(); return; }
 
+    // Reuse the existing box so photos crossfade in place — clearing the
+    // wrapper first blanked the screen to black between photos.
+    let box = wrapper.querySelector('.img-box');
+    if (!box || !box.querySelector('.media-container')) {
+      wrapper.innerHTML = '';
+      box = document.createElement('div');
+      box.className = 'img-box';
+      const media = document.createElement('div');
+      media.className = 'media-container';
+      box.appendChild(media);
+      wrapper.appendChild(box);
+      box.dataset.photoId = '';
+    }
+    if (box.dataset.photoId !== photo.id) {
+      crossfadeToPhoto(box, photo);
+      box.dataset.photoId = photo.id;
+    }
+
+    schedulePreload();
     restartCycleTimer();
   }
 
@@ -2376,7 +2562,12 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
     if (boxes.length === 0) return;
     const targetBox = boxes[STATE.rotationIndex % boxes.length];
     STATE.rotationIndex++;
-    changePhotoInBox(targetBox);
+    // Use the photo we pre-picked and preloaded, if it's still valid
+    const shown = new Set($$('.img-box', wrapper).map(b => b.dataset.photoId));
+    const preloaded = STATE.nextPhoto && !shown.has(STATE.nextPhoto.id) && !STATE.nextPhoto._mediaFailed
+      ? STATE.nextPhoto : null;
+    STATE.nextPhoto = null;
+    changePhotoInBox(targetBox, preloaded);
   }
 
   function restartCycleTimer() {
@@ -2385,6 +2576,7 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
     const ms = Math.max(5, Math.min(1800, Number(STATE.settings.cycleSec) || 15)) * 1000;
     if (STATE.activeMode === 1) {
       STATE.cycleTimer = setInterval(() => {
+        if (STATE.photos.length < 2) return;
         STATE.rotationIndex++;
         renderFullscreen();
       }, ms);
@@ -2413,24 +2605,74 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
     if (candidates.length === 0) return;
     const next = pick(candidates);
 
-    // Crossfade swap
-    const mediaContainer = targetBox.querySelector('.media-container');
-    const oldItems = $$('.media-item', mediaContainer);
-    const newMedia = createMediaElement(next, targetBox, () => {
-      oldItems.forEach(el => el.classList.add('fading-out'));
-      setTimeout(() => {
-        oldItems.forEach(el => el.parentNode && el.parentNode.removeChild(el));
-      }, 1200);
-    });
-    newMedia.style.position = 'absolute';
-    newMedia.style.top = '0';
-    newMedia.style.left = '0';
-    mediaContainer.appendChild(newMedia);
+    // From now on, loads in this box refit only this box (no board re-score).
+    targetBox._swapRefitOnly = true;
+    // If Drive metadata already gave us the aspect, refit before the fade starts.
+    if (next.aspect && STATE.activeMode === 3) refitBoxToPhoto(targetBox, next);
+
+    crossfadeToPhoto(targetBox, next);
     targetBox.dataset.photoId = next.id;
 
     // Update caption if any
     const cap = targetBox.querySelector('.photo-caption');
     if (cap) cap.textContent = next.caption || next.location || '';
+
+    schedulePreload();
+  }
+
+  /**
+   * Layered crossfade: the incoming photo fades in ON TOP of the old one,
+   * which stays fully opaque underneath — so the paper background never
+   * flashes through mid-fade. The old photo is retired only after the fade
+   * completes. A per-container token cancels superseded in-flight swaps so
+   * rapid taps or slow networks can't race each other into a blank box.
+   */
+  function crossfadeToPhoto(box, photo) {
+    const mediaContainer = box.querySelector('.media-container');
+    if (!mediaContainer) return null;
+    const seq = (mediaContainer._swapSeq = (mediaContainer._swapSeq || 0) + 1);
+    const oldItems = $$('.media-item', mediaContainer);
+    const newMedia = createMediaElement(photo, box, () => {
+      if (mediaContainer._swapSeq !== seq) {
+        // A newer swap superseded this one while it was still loading
+        if (newMedia.parentNode) newMedia.parentNode.removeChild(newMedia);
+        return;
+      }
+      const fadeMs = Math.max(250, (Number(STATE.settings.transitionSec) || 0.9) * 1000);
+      setTimeout(() => {
+        if (mediaContainer._swapSeq !== seq) return;
+        oldItems.forEach(el => { if (el !== newMedia) el.classList.add('fading-out'); });
+        setTimeout(() => {
+          oldItems.forEach(el => { if (el !== newMedia && el.parentNode) el.parentNode.removeChild(el); });
+        }, 450);
+      }, fadeMs + 80);
+    });
+    newMedia.style.position = 'absolute';
+    newMedia.style.top = '0';
+    newMedia.style.left = '0';
+    mediaContainer.appendChild(newMedia);
+    return newMedia;
+  }
+
+  // ---------- Preload the next photo so swaps are instant ----------
+  function schedulePreload() {
+    if (STATE.photos.length < 2) { STATE.nextPhoto = null; return; }
+    if (STATE.activeMode === 1) {
+      preloadPhoto(STATE.photos[(STATE.rotationIndex + 1) % STATE.photos.length]);
+      return;
+    }
+    const shown = new Set($$('.img-box', $('#photo-wrapper')).map(b => b.dataset.photoId));
+    const candidates = STATE.photos.filter(p => !shown.has(p.id) && !p._mediaFailed);
+    STATE.nextPhoto = candidates.length ? pick(candidates) : null;
+    preloadPhoto(STATE.nextPhoto);
+  }
+
+  function preloadPhoto(photo) {
+    if (!photo || photo.blob || isVideoPhoto(photo)) return;
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = photo.url;
+    STATE.preloadImg = img;
   }
 
   // ---------- Strings (decorative SVG) ----------
@@ -2449,9 +2691,10 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
       const dx = b.x - a.x, dy = b.y - a.y;
       const dist = Math.hypot(dx, dy);
       if (dist > 30) continue; // skip far ones
-      // Bezier midpoint with sag
+      // Bezier midpoint with sag (deterministic per pair, so strings don't
+      // wiggle every time the board redraws)
       const mx = (a.x + b.x) / 2;
-      const my = (a.y + b.y) / 2 + 2 + Math.random() * 3;
+      const my = (a.y + b.y) / 2 + 2 + ((i * 137) % 30) / 10;
       lines += `<path d="M ${a.x} ${a.y} Q ${mx} ${my} ${b.x} ${b.y}"
                 stroke="rgba(60,38,18,0.55)" stroke-width="0.18" fill="none"
                 stroke-linecap="round" stroke-dasharray="0.5 0.5" />`;
@@ -2460,6 +2703,13 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
   }
 
   // ---------- Time / Agenda widget ----------
+  // Re-render right on each minute boundary so the clock never lags
+  function scheduleMinuteClock() {
+    const now = new Date();
+    const msToNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds() + 60;
+    setTimeout(() => { updateClock(); scheduleMinuteClock(); }, Math.max(300, msToNextMinute));
+  }
+
   function updateClock() {
     const now = new Date();
     const h = now.getHours();
@@ -2725,6 +2975,10 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
       e.preventDefault();
       window.open(DEFAULT_GUEST_DRIVE_FOLDER_URL, '_blank');
     });
+    bindToggle('#btn-offline-cache', 'offlineCache', () => {
+      if (STATE.settings.offlineCache) backgroundCacheDrivePhotos();
+      else offlineCacheStatus('Streaming mode — photos load from Drive each time. Saved copies stay until you clear photos.');
+    });
 
     // Local upload
     $('#btn-upload').addEventListener('click', () => $('#fileInput').click());
@@ -2804,6 +3058,7 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
     paintToggle('#btn-auto-dim', STATE.settings.autoDim);
     paintToggle('#btn-photo-motion', STATE.settings.photoMotion);
     paintToggle('#btn-guest-drive', STATE.settings.guestMode);
+    paintToggle('#btn-offline-cache', STATE.settings.offlineCache);
     paintToggle('#btn-strings', STATE.settings.strings);
     paintToggle('#btn-tape', STATE.settings.tape);
     paintArrange();
@@ -2893,6 +3148,40 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
     renderCorkBoard();
   }
 
+  // ---------- Fullscreen swipe (Single Photo mode) ----------
+  // Swipe left = next photo, swipe right = previous. Also resets the cycle
+  // timer so the new photo gets its full time on screen.
+  function bindFullscreenSwipe() {
+    const wrapper = $('#photo-wrapper');
+    let start = null;
+    wrapper.addEventListener('pointerdown', (e) => {
+      if (STATE.activeMode !== 1) return;
+      start = { x: e.clientX, y: e.clientY, t: Date.now() };
+    });
+    wrapper.addEventListener('pointerup', (e) => {
+      if (STATE.activeMode !== 1 || !start) { start = null; return; }
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+      const dt = Date.now() - start.t;
+      start = null;
+      if (dt > 700 || Math.abs(dx) < 70 || Math.abs(dy) > Math.abs(dx) * 0.8) return;
+      const len = STATE.photos.length;
+      if (len < 2) return;
+      STATE.rotationIndex = (STATE.rotationIndex + (dx < 0 ? 1 : len - 1)) % len;
+      renderFullscreen();
+    });
+    wrapper.addEventListener('pointercancel', () => { start = null; });
+  }
+
+  // ---------- Orientation / viewport changes ----------
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (STATE.activeMode === 3) relayoutCorkBoard();
+    }, 200);
+  });
+
   // ---------- Wake lock ----------
   async function updateWakeLock() {
     if (STATE.settings.screenWake) {
@@ -2927,8 +3216,9 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
     document.body.classList.add('mode-' + STATE.activeMode);
 
     bindSettings();
+    bindFullscreenSwipe();
     updateClock();
-    setInterval(updateClock, 1000 * 30);
+    scheduleMinuteClock();
 
     await loadPhotosFromDB();
     renderCorkBoard();
@@ -2943,6 +3233,17 @@ body.motion-on .ken-burns { animation: kb 24s infinite alternate ease-in-out; }
     updateWeather();
     setInterval(updateWeather, 1000 * 60 * 30);
     updateWakeLock();
+
+    // Ask the browser not to evict our cached photos under storage pressure
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().catch(() => {});
+    }
+    // Offline shell: fonts, cork texture, and the page itself keep working
+    // through Wi-Fi outages. Photos are cached separately in IndexedDB.
+    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+    setTimeout(backgroundCacheDrivePhotos, 5000);
 
     setTimeout(() => $('#splash').classList.add('hidden'), 600);
   }

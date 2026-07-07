@@ -94,6 +94,50 @@ test('Cork board uses a generated bitmap texture asset', () => {
   assert.match(html, /url\("assets\/corkboard-texture\.jpg"\)/);
 });
 
+test('Photo switching is glitch-free: layered crossfade, swap tokens, decode, preloading', () => {
+  assert.match(html, /function crossfadeToPhoto/);
+  assert.match(html, /_swapSeq/);
+  assert.match(html, /media\.decode\(\)\.then/);
+  assert.match(html, /function schedulePreload/);
+  assert.match(html, /function preloadPhoto/);
+  assert.match(html, /function refitBoxToPhoto/);
+  assert.match(html, /function scheduleRelayout/);
+  assert.match(html, /function slotsRoughlyEqual/);
+});
+
+test('Single Photo mode crossfades in place and supports swipe next/previous', () => {
+  assert.match(html, /function bindFullscreenSwipe/);
+  assert.match(html, /crossfadeToPhoto\(box, photo\)/);
+});
+
+test('Drive photos are saved to the tablet for offline display', () => {
+  assert.match(html, /id="btn-offline-cache"/);
+  assert.match(html, /function backgroundCacheDrivePhotos/);
+  assert.match(html, /function fetchDriveImageBlob/);
+  assert.match(html, /function downscaleImageBlob/);
+  assert.match(html, /offlineCache:\s*s\.offlineCache !== false/);
+  assert.match(html, /navigator\.storage\.persist/);
+});
+
+test('Frame shell works offline as a PWA', async () => {
+  assert.match(html, /rel="manifest"/);
+  assert.match(html, /serviceWorker/);
+  const sw = await readFile(new URL('../sw.js', import.meta.url), 'utf8');
+  assert.match(sw, /cork-frame-shell/);
+  assert.match(sw, /networkFirst/);
+  assert.match(sw, /staleWhileRevalidate/);
+  const manifest = JSON.parse(await readFile(new URL('../manifest.json', import.meta.url), 'utf8'));
+  assert.equal(manifest.display, 'fullscreen');
+  const icon = await readFile(new URL('../icon.svg', import.meta.url), 'utf8');
+  assert.match(icon, /<svg/);
+});
+
+test('Layout adapts to portrait orientation and dynamic viewports', () => {
+  assert.match(html, /orientation: portrait/);
+  assert.match(html, /100dvh/);
+  assert.match(html, /safe-area-inset/);
+});
+
 test('Weather is locked to American Fork, Utah', () => {
   assert.match(html, /AMERICAN_FORK_WEATHER\s*=\s*Object\.freeze/);
   assert.match(html, /label:\s*'American Fork, UT'/);
