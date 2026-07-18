@@ -1,5 +1,33 @@
 # Photo-Frame v2 — upgrade notes
 
+## v2.2 — fluid S7+ layout, merged guest photos
+
+- **Fluid layout for the Tab S7+ fullscreen.** Widget typography, sticky-note
+  sizing, the wood frame border, and the corner brackets now scale
+  continuously with the viewport via `clamp()` — the S7+ fullscreen viewport
+  (~1280 css px landscape) hits the tuned design exactly, and every other
+  size (portrait, split-screen, browser-with-address-bar) interpolates
+  smoothly instead of jumping between breakpoints.
+- **Guest photos now MIX instead of replace.** The guest toggle (renamed
+  *Include Guest Photos*) is additive: when ON, the family folder and the
+  guest folder sync together and shuffle into one combined rotation; when
+  OFF, it's family only. Previously the toggle switched the frame to the
+  guest folder *instead of* the family one. The Drive status panel shows
+  both folders, and the sync toast reports how many guest photos joined.
+  Each folder's own `photos.json` captions still apply.
+- **Offline cache survives re-syncs.** Photos already saved to the tablet
+  are no longer re-downloaded after every sync — saved copies carry over
+  whenever the file is unchanged (matched by Drive checksum).
+- **Offline downloads fixed.** Google recently started redirecting the
+  Drive `alt=media` endpoint without CORS headers, which silently broke
+  photo downloads in every browser. The cacher now falls back to the
+  CORS-readable `lh3.googleusercontent.com` rendition (already
+  tablet-sized, and it transcodes HEIC), with a circuit breaker so a dead
+  network can't make it grind through hundreds of failing requests.
+- **Shuffled play order every boot.** Unless every photo has an explicit
+  `photos.json` order, the deck is shuffled at load so Single Photo mode
+  gets a fresh sequence each time and both folders interleave evenly.
+
 ## v2.1 — smooth switching, offline photos, portrait layout
 
 Nothing removed — every upgrade below is additive.

@@ -55,6 +55,9 @@
   --accent: #d4894a;
   --accent-glow: rgba(212, 137, 74, 0.35);
 
+  /* Fluid frame border — scales with the viewport (S7+ fullscreen ≈ 1280css px) */
+  --frame-w: clamp(16px, 2vw, 32px);
+
   /* Animation timings */
   --transition-photos: 0.9s;
   --rot-1: -3.4deg;
@@ -90,7 +93,7 @@ body {
   position: absolute; inset: 0;
   pointer-events: none;
   z-index: 200;
-  border: 28px solid transparent;
+  border: var(--frame-w) solid transparent;
   border-image: linear-gradient(
       135deg,
       #6b4423 0%, #8b5e35 12%, #5a3a1c 25%, #8b5e35 38%,
@@ -105,7 +108,7 @@ body {
 /* Wood grain texture overlay */
 #wood-frame::before {
   content: '';
-  position: absolute; inset: -28px;
+  position: absolute; inset: calc(-1 * var(--frame-w));
   background:
     repeating-linear-gradient(
       90deg,
@@ -122,7 +125,7 @@ body {
     linear-gradient(#000, #000);
   -webkit-mask-composite: xor;
           mask-composite: exclude;
-  padding: 28px;
+  padding: var(--frame-w);
 }
 
 /* Hide wood frame in fullscreen mode */
@@ -131,7 +134,7 @@ body {
 /* Ornamental brass corner brackets */
 .corner-bracket {
   position: absolute;
-  width: 44px; height: 44px;
+  width: clamp(34px, 3.4vw, 48px); height: clamp(34px, 3.4vw, 48px);
   background:
     radial-gradient(circle at 35% 35%, #f4d59a 0%, #c69a4f 35%, #8c6325 75%, #4a3010 100%);
   z-index: 201;
@@ -492,7 +495,7 @@ body.motion-on .ken-burns { animation: kb 26s infinite alternate ease-in-out; }
 
 .sticky-note {
   position: relative;
-  padding: 22px 28px;
+  padding: clamp(14px, 2vw, 28px) clamp(18px, 2.5vw, 34px);
   pointer-events: auto;
   cursor: pointer;
   font-family: 'Kalam', cursive;
@@ -554,21 +557,21 @@ body.motion-on .ken-burns { animation: kb 26s infinite alternate ease-in-out; }
   background-image: linear-gradient(135deg, rgba(255,255,255,0.55) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.025) 100%);
   transform: rotate(-1.6deg);
   text-align: center;
-  min-width: 220px;
+  min-width: clamp(180px, 19.5vw, 260px);
 }
 #time-display {
-  font-size: 4.6rem; font-weight: 700;
+  font-size: clamp(2.8rem, 6.25vw, 5.2rem); font-weight: 700;
   line-height: 1; color: #1a1a1a;
   letter-spacing: -1.5px;
   font-family: 'Kalam', cursive;
 }
 #ampm {
-  font-size: 1.3rem; font-weight: 400; color: #777;
+  font-size: clamp(1rem, 1.5vw, 1.4rem); font-weight: 400; color: #777;
   margin-left: 4px;
   font-family: 'Kalam', cursive;
 }
 #date-line {
-  font-size: 1.2rem; color: #555;
+  font-size: clamp(0.95rem, 1.4vw, 1.3rem); color: #555;
   margin-top: 8px;
   font-family: 'Kalam', cursive;
   font-weight: 400;
@@ -580,21 +583,21 @@ body.motion-on .ken-burns { animation: kb 26s infinite alternate ease-in-out; }
   background-image: linear-gradient(135deg, rgba(255,255,255,0.50) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.025) 100%);
   transform: rotate(1.0deg);
   display: flex;
-  gap: 22px;
+  gap: clamp(12px, 1.8vw, 26px);
   text-align: center;
 }
 .day-col { display: flex; flex-direction: column; gap: 4px; }
 .day-label {
-  font-size: 1rem; text-transform: uppercase;
+  font-size: clamp(0.8rem, 1.1vw, 1.05rem); text-transform: uppercase;
   color: #888; font-weight: 700; letter-spacing: 1px;
   font-family: 'Kalam', cursive;
 }
 .day-date {
-  font-size: 2.6rem; font-weight: 700;
+  font-size: clamp(1.7rem, 3.5vw, 3rem); font-weight: 700;
   line-height: 1; color: #2a2a2a;
   font-family: 'Kalam', cursive;
 }
-.day-sub { font-size: 1rem; color: #777; font-family: 'Kalam', cursive; }
+.day-sub { font-size: clamp(0.8rem, 1.1vw, 1.05rem); color: #777; font-family: 'Kalam', cursive; }
 .day-divider {
   width: 1px; background: rgba(0,0,0,0.13);
   align-self: stretch; margin: 4px 0;
@@ -608,31 +611,31 @@ body.motion-on .ken-burns { animation: kb 26s infinite alternate ease-in-out; }
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  min-width: 270px;
+  min-width: clamp(200px, 23vw, 310px);
   text-align: right;
 }
 #weather-main { display: flex; align-items: center; gap: 12px; }
-#weather-icon { font-size: 48px; color: #0369a1; }
+#weather-icon { font-size: clamp(34px, 3.8vw, 52px); color: #0369a1; }
 #temp {
-  font-size: 4rem; font-weight: 700;
+  font-size: clamp(2.5rem, 5.4vw, 4.6rem); font-weight: 700;
   line-height: 1; color: #1a1a1a;
   font-family: 'Kalam', cursive;
 }
 #condition {
-  font-size: 1.25rem; font-weight: 600;
+  font-size: clamp(1rem, 1.45vw, 1.35rem); font-weight: 600;
   text-transform: capitalize;
   color: #3a3a3a;
   font-family: 'Kalam', cursive;
 }
 #weather-details {
-  font-size: 1rem; color: #555;
+  font-size: clamp(0.85rem, 1.15vw, 1.05rem); color: #555;
   margin-top: 6px;
   font-family: 'Kalam', cursive;
   line-height: 1.45;
   text-align: right;
 }
 #weather-tomorrow {
-  font-size: 0.95rem; color: #666;
+  font-size: clamp(0.8rem, 1.1vw, 1rem); color: #666;
   margin-top: 6px;
   font-family: 'Kalam', cursive;
   line-height: 1.3;
@@ -942,12 +945,9 @@ body.motion-on .ken-burns { animation: kb 26s infinite alternate ease-in-out; }
 /* =====================================================
    RESPONSIVE — Galaxy Tab S7+ landscape sweet spot
    ===================================================== */
+/* Widget sizing is fluid (clamp + vw) — these queries only adjust structure */
 @media (max-width: 1100px) {
-  #time-display { font-size: 3.6rem; }
-  #temp { font-size: 3.2rem; }
-  .day-date { font-size: 2.1rem; }
-  #sticky-container { padding: 0 22px; gap: 14px; }
-  .sticky-note { padding: 18px 22px; }
+  #sticky-container { padding: 0 max(22px, env(safe-area-inset-right, 0px)) 0 max(22px, env(safe-area-inset-left, 0px)); gap: 14px; }
 }
 @media (max-width: 720px) {
   #sticky-container { flex-direction: column; align-items: stretch; gap: 10px; }
@@ -959,11 +959,6 @@ body.motion-on .ken-burns { animation: kb 26s infinite alternate ease-in-out; }
 @media (min-width: 721px) and (max-width: 1080px) and (orientation: portrait) {
   #sticky-container { flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 16px; }
   #agenda-box { order: 3; }
-  #time-widget { min-width: 190px; }
-  #weather-box { min-width: 240px; }
-  #time-display { font-size: 3.4rem; }
-  #temp { font-size: 3rem; }
-  .day-date { font-size: 2rem; }
 }
 
 /* Dynamic viewport units: when the browser chrome (address bar) is showing,
@@ -974,15 +969,8 @@ body.motion-on .ken-burns { animation: kb 26s infinite alternate ease-in-out; }
   #container { height: 100dvh; }
 }
 
-/* High-DPI tablet fine-tuning (S7+) */
-@media (min-width: 1280px) {
-  #time-display { font-size: 5rem; }
-  #temp { font-size: 4.3rem; }
-  .day-date { font-size: 2.8rem; }
-  .sticky-note { padding: 26px 32px; }
-  #weather-box { min-width: 300px; }
-  #time-widget { min-width: 250px; }
-}
+/* S7+ fullscreen landscape (~1280css px) hits the top of every clamp() range,
+   matching the tuned design exactly; other viewports interpolate smoothly. */
 
 /* Hide scrollbars on settings */
 #settings-panel::-webkit-scrollbar { width: 6px; }
@@ -1107,7 +1095,7 @@ body.motion-on .ken-burns { animation: kb 26s infinite alternate ease-in-out; }
           <span class="material-symbols-rounded" style="font-size:18px">cloud_sync</span>
         </button>
         <button class="pro-btn" id="btn-guest-drive">
-          Guest Photo Set <span class="btn-tag">OFF</span>
+          Include Guest Photos <span class="btn-tag">OFF</span>
         </button>
         <button class="pro-btn" id="btn-offline-cache">
           Offline Photo Cache <span class="btn-tag">ON</span>
@@ -1116,6 +1104,7 @@ body.motion-on .ken-burns { animation: kb 26s infinite alternate ease-in-out; }
         <div id="drive-status">Not configured.</div>
         <div class="help-text">
           Drag photos or videos into your shared Drive folder from any device. The frame fetches them via the baked-in Drive API settings.
+          When guest photos are ON, the family and guest folders sync together and shuffle into one mixed rotation.
           <a href="#" id="open-drive-folder" style="color:var(--accent);">open active folder</a>
           · <a href="#" id="open-guest-drive-folder" style="color:var(--accent);">guest folder</a>
         </div>
@@ -1216,7 +1205,8 @@ body.motion-on .ken-burns { animation: kb 26s infinite alternate ease-in-out; }
       <div class="setting-group">
         <span class="setting-label">About</span>
         <div class="help-text">
-          v2.1 · cork-forward · optimized for Galaxy Tab S7+ (landscape &amp; portrait).<br>
+          v2.2 · cork-forward · fluid layout tuned for Galaxy Tab S7+ fullscreen (landscape &amp; portrait).<br>
+          Guest photos, when enabled, sync alongside the family folder and shuffle into one mix.<br>
           Photos and videos load from Google Drive, save to the tablet, and keep working offline.<br>
           Smooth crossfades with photo preloading. In Single Photo mode, swipe left/right for next/previous.<br>
           Tap settings → Sync from Drive to refresh immediately.
@@ -1412,13 +1402,20 @@ body.motion-on .ken-burns { animation: kb 26s infinite alternate ease-in-out; }
 
   async function loadPhotosFromDB() {
     const all = await dbAll('photos');
-    STATE.photos = all.map(rec => {
+    const photos = all.map(rec => {
       const migrated = migrateDriveMediaRecord(rec);
       return {
         ...migrated,
         url: rec.blob ? URL.createObjectURL(rec.blob) : migrated.url
       };
     });
+    // Respect explicit photos.json ordering when every photo has one;
+    // otherwise shuffle so family and guest photos interleave evenly
+    // (also gives Single Photo mode a fresh sequence every boot).
+    const hasFullOrder = photos.length > 0 && photos.every(p => p.order != null);
+    STATE.photos = hasFullOrder
+      ? photos.sort((a, b) => a.order - b.order)
+      : shuffle(photos);
     updateStorageStatus();
   }
 
@@ -1631,11 +1628,52 @@ body.motion-on .ken-burns { animation: kb 26s infinite alternate ease-in-out; }
   }
 
   function activeDriveFolderId() {
-    return STATE.settings.guestMode ? STATE.settings.guestDriveFolder : STATE.settings.gdFolder;
+    return STATE.settings.gdFolder;
   }
 
   function activeDriveFolderUrl() {
-    return STATE.settings.guestMode ? DEFAULT_GUEST_DRIVE_FOLDER_URL : DEFAULT_DRIVE_FOLDER_URL;
+    return DEFAULT_DRIVE_FOLDER_URL;
+  }
+
+  // Every folder that should feed the frame right now. Guest mode is
+  // ADDITIVE: family + guest folders sync together and shuffle into one mix.
+  function activeDriveFolders() {
+    const folders = [{ id: STATE.settings.gdFolder, scope: 'main' }];
+    if (STATE.settings.guestMode && STATE.settings.guestDriveFolder) {
+      folders.push({ id: STATE.settings.guestDriveFolder, scope: 'guest' });
+    }
+    return folders.filter(f => f.id);
+  }
+
+  async function listDriveFolder(folderId, gdKey) {
+    const q = encodeURIComponent(`'${folderId}' in parents and (mimeType contains 'image/' or mimeType contains 'video/' or name = 'photos.json') and trashed = false`);
+    const fields = encodeURIComponent('files(id,name,mimeType,size,modifiedTime,md5Checksum,thumbnailLink,webContentLink,imageMediaMetadata,videoMediaMetadata)');
+    const listUrl =
+      `https://www.googleapis.com/drive/v3/files?q=${q}&fields=${fields}&pageSize=1000&supportsAllDrives=true&includeItemsFromAllDrives=true&key=${encodeURIComponent(gdKey)}`;
+    const r = await fetch(listUrl);
+    if (!r.ok) {
+      const body = await r.text().catch(() => '');
+      throw new Error(`Drive ${r.status}: ${body.slice(0, 200) || r.statusText}`);
+    }
+    const j = await r.json();
+    return j.files || [];
+  }
+
+  // Optional photos.json metadata, read per folder
+  async function readDriveFolderMeta(files, gdKey) {
+    const metaFile = files.find(f => f.name === 'photos.json');
+    const meta = {};
+    if (!metaFile) return meta;
+    try {
+      const mr = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${metaFile.id}?alt=media&key=${encodeURIComponent(gdKey)}`
+      );
+      if (mr.ok) {
+        const json = await mr.json();
+        if (Array.isArray(json.photos)) json.photos.forEach(p => { if (p.file) meta[p.file] = p; });
+      }
+    } catch {}
+    return meta;
   }
 
   async function syncFromDrive() {
@@ -1646,62 +1684,59 @@ body.motion-on .ken-burns { animation: kb 26s infinite alternate ease-in-out; }
     saveSettings();
     $('#gd-folder').value = STATE.settings.gdFolder;
     const gdKey = STATE.settings.gdKey;
-    const gdFolder = activeDriveFolderId();
-    if (!gdKey || !gdFolder) { toast('Set the Drive API key and folder ID first'); return; }
+    const folders = activeDriveFolders();
+    if (!gdKey || folders.length === 0) { toast('Set the Drive API key and folder ID first'); return; }
 
-    setSyncStatus('syncing', STATE.settings.guestMode ? 'Listing guest Drive folder…' : 'Listing Drive folder…');
+    setSyncStatus('syncing', folders.length > 1 ? 'Listing family + guest folders…' : 'Listing Drive folder…');
     STATE.syncing = true;
 
     try {
-      // 1) List media files in the folder
-      const q = encodeURIComponent(`'${gdFolder}' in parents and (mimeType contains 'image/' or mimeType contains 'video/' or name = 'photos.json') and trashed = false`);
-      const fields = encodeURIComponent('files(id,name,mimeType,size,modifiedTime,md5Checksum,thumbnailLink,webContentLink,imageMediaMetadata,videoMediaMetadata)');
-      const listUrl =
-        `https://www.googleapis.com/drive/v3/files?q=${q}&fields=${fields}&pageSize=1000&supportsAllDrives=true&includeItemsFromAllDrives=true&key=${encodeURIComponent(gdKey)}`;
-
-      const r = await fetch(listUrl);
-      if (!r.ok) {
-        const body = await r.text().catch(() => '');
-        throw new Error(`Drive ${r.status}: ${body.slice(0, 200) || r.statusText}`);
+      // 1) List media in every active folder (family + guest at the same time),
+      // reading each folder's optional photos.json for captions.
+      const entries = []; // { file, scope, meta }
+      const folderErrors = [];
+      for (const folder of folders) {
+        try {
+          const files = await listDriveFolder(folder.id, gdKey);
+          const meta = await readDriveFolderMeta(files, gdKey);
+          files
+            .filter(f => /^(image|video)\//.test(f.mimeType || ''))
+            .forEach(file => entries.push({ file, scope: folder.scope, meta: meta[file.name] || {} }));
+        } catch (e) {
+          folderErrors.push(e);
+          console.warn(`Drive listing failed for ${folder.scope} folder`, e);
+        }
       }
-      const j = await r.json();
-      const files = j.files || [];
-      const mediaFiles = files.filter(f => /^(image|video)\//.test(f.mimeType || ''));
-      if (mediaFiles.length === 0) {
+      if (entries.length === 0) {
+        if (folderErrors.length) throw folderErrors[0];
         setSyncStatus('warn', 'Drive folder is empty');
         toast('No photos or videos found in the Drive folder');
         STATE.syncing = false;
         return;
       }
 
-      // Sort by name (so prefixed dates land in order naturally)
-      mediaFiles.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      // Deterministic index order; display order is shuffled at load time so
+      // family and guest photos mix together instead of running in blocks.
+      entries.sort((a, b) => (a.file.name || '').localeCompare(b.file.name || ''));
 
-      // 2) Try to read optional photos.json metadata from the same folder
-      const metaFile = files.find(f => f.name === 'photos.json');
-      let meta = {};
-      if (metaFile) {
-        try {
-          const mr = await fetch(
-            `https://www.googleapis.com/drive/v3/files/${metaFile.id}?alt=media&key=${encodeURIComponent(gdKey)}`
-          );
-          if (mr.ok) {
-            const json = await mr.json();
-            if (Array.isArray(json.photos)) json.photos.forEach(p => { if (p.file) meta[p.file] = p; });
-          }
-        } catch {}
-      }
+      // 2) Remember offline copies from the previous sync so unchanged photos
+      // don't have to be downloaded to the tablet again
+      const prevBlobs = new Map();
+      try {
+        (await dbAll('photos')).forEach(r => {
+          if (r.source === 'drive' && r.blob && r.sha) prevBlobs.set(r.id, r);
+        });
+      } catch {}
 
       // 3) Clear previous drive cache
       await dbDeleteBySource('drive');
 
       // 4) Cache Drive media records. Public Drive thumbnails/content URLs paint
       // directly in the browser and avoid blocking startup on large videos.
-      let done = 0;
-      for (const f of mediaFiles) {
+      let done = 0, guestCount = 0;
+      for (const { file: f, scope, meta: m } of entries) {
         if (f.name === 'photos.json') continue;
         try {
-          const m = meta[f.name] || {};
           const urls = driveMediaUrls(f, gdKey);
           const rec = {
             id: 'gd:' + f.id,
@@ -1709,7 +1744,7 @@ body.motion-on .ken-burns { animation: kb 26s infinite alternate ease-in-out; }
             fallbackUrl: urls.fallbackUrl,
             thumbnailUrl: urls.thumbnailUrl,
             source: 'drive',
-            driveScope: STATE.settings.guestMode ? 'guest' : 'main',
+            driveScope: scope,
             mimeType: f.mimeType || '',
             file: f.name,
             caption: m.caption || '',
@@ -1720,9 +1755,12 @@ body.motion-on .ken-burns { animation: kb 26s infinite alternate ease-in-out; }
             driveId: f.id,
             sha: f.md5Checksum || ''
           };
+          const prev = prevBlobs.get(rec.id);
+          if (prev && prev.sha === rec.sha) rec.blob = prev.blob;
           await dbPut(rec);
           done++;
-          setSyncStatus('syncing', `Indexing ${done}/${mediaFiles.length}…`);
+          if (scope === 'guest') guestCount++;
+          setSyncStatus('syncing', `Indexing ${done}/${entries.length}…`);
         } catch (e) {
           console.warn('Drive index skipped for', f.name, e);
         }
@@ -1734,7 +1772,7 @@ body.motion-on .ken-burns { animation: kb 26s infinite alternate ease-in-out; }
       renderCorkBoard();
       setSyncStatus('ok', `Synced ${done} from Drive`);
       setTimeout(() => $('#sync-status').classList.remove('visible'), 4000);
-      toast(`Synced ${done} photos/videos from ${STATE.settings.guestMode ? 'guest ' : ''}Google Drive`);
+      toast(`Synced ${done} photos/videos${guestCount ? ` (${guestCount} guest, shuffled in)` : ''} from Google Drive`);
       updateDriveStatus();
       // Start saving the fresh set to the tablet once syncing has settled
       setTimeout(backgroundCacheDrivePhotos, 1200);
@@ -1759,8 +1797,7 @@ body.motion-on .ken-burns { animation: kb 26s infinite alternate ease-in-out; }
 
   function updateDriveStatus() {
     const el = $('#drive-status');
-    const { gdKey, lastDriveSync, gdAccount, guestMode } = STATE.settings;
-    const gdFolder = activeDriveFolderId();
+    const { gdKey, lastDriveSync, gdAccount, guestMode, gdFolder, guestDriveFolder } = STATE.settings;
     if (!gdFolder || !gdKey) {
       el.textContent = !gdFolder
         ? 'Folder ID missing.'
@@ -1769,7 +1806,11 @@ body.motion-on .ken-burns { animation: kb 26s infinite alternate ease-in-out; }
       return;
     }
     const last = lastDriveSync ? new Date(lastDriveSync).toLocaleString() : 'never';
-    el.textContent = `Mode: ${guestMode ? 'Guest photo set' : 'Main family folder'}\nAccount: ${gdAccount || '(public folder)'}\nFolder: …${gdFolder.slice(-10)}\nLast sync: ${last}`;
+    const merged = guestMode && guestDriveFolder;
+    const folderLine = merged
+      ? `Folders: …${gdFolder.slice(-8)} + guest …${guestDriveFolder.slice(-8)}`
+      : `Folder: …${gdFolder.slice(-10)}`;
+    el.textContent = `Mode: ${merged ? 'Family + guest photos, shuffled together' : 'Main family folder'}\nAccount: ${gdAccount || '(public folder)'}\n${folderLine}\nLast sync: ${last}`;
     el.className = 'ok';
   }
 
@@ -1801,13 +1842,32 @@ body.motion-on .ken-burns { animation: kb 26s infinite alternate ease-in-out; }
     }
   }
 
+  function driveLh3Url(rec, width = 2400) {
+    const id = typeof rec === 'string' ? rec : (rec.driveId || rec.id);
+    return `https://lh3.googleusercontent.com/d/${encodeURIComponent(id)}=w${width}`;
+  }
+
   async function fetchDriveImageBlob(rec) {
-    // The Drive API media endpoint supports CORS; the thumbnail endpoint doesn't.
-    const r = await fetch(driveFileMediaUrl(rec), { mode: 'cors' });
-    if (!r.ok) throw new Error('drive media ' + r.status);
-    const raw = await r.blob();
-    if (isGifPhoto(rec)) return raw.size <= 20 * 1024 * 1024 ? raw : null;
-    return await downscaleImageBlob(raw);
+    // Primary: the Drive API media endpoint — full original, CORS-readable
+    // when Google serves the bytes directly.
+    try {
+      const r = await fetch(driveFileMediaUrl(rec), { mode: 'cors' });
+      if (r.ok) {
+        const raw = await r.blob();
+        if (isGifPhoto(rec)) return raw.size <= 20 * 1024 * 1024 ? raw : null;
+        const scaled = await downscaleImageBlob(raw);
+        if (scaled) return scaled;
+      }
+    } catch {}
+    // Fallback: Google intermittently redirects alt=media without CORS
+    // headers, which breaks fetch() in every browser. The lh3 image host
+    // serves a CORS-readable rendition already sized for the tablet, and
+    // also transcodes formats the browser can't decode (HEIC).
+    if (isGifPhoto(rec)) return null; // an lh3 rendition would freeze the animation — keep streaming
+    const r2 = await fetch(driveLh3Url(rec), { mode: 'cors' });
+    if (!r2.ok) throw new Error('drive lh3 ' + r2.status);
+    const blob = await r2.blob();
+    return /^image\//.test(blob.type || '') && blob.size > 0 ? blob : null;
   }
 
   function offlineCacheStatus(text) {
@@ -1820,7 +1880,7 @@ body.motion-on .ken-burns { animation: kb 26s infinite alternate ease-in-out; }
     OFFLINE.running = true;
     try {
       const all = await dbAll('photos');
-      const pending = all.filter(r => r.source === 'drive' && !r.blob && r.driveId && !isVideoPhoto(r));
+      const pending = all.filter(r => r.source === 'drive' && !r.blob && !r.noCache && r.driveId && !isVideoPhoto(r));
       const cachedCount = all.filter(r => r.source === 'drive' && r.blob).length;
       const total = cachedCount + pending.length;
       if (!pending.length) {
@@ -1830,6 +1890,7 @@ body.motion-on .ken-burns { animation: kb 26s infinite alternate ease-in-out; }
         return;
       }
       let done = cachedCount;
+      let consecutiveFailures = 0;
       offlineCacheStatus(`Saving photos to the tablet… ${done}/${total}`);
       for (const rec of pending) {
         if (!STATE.settings.offlineCache || STATE.syncing) break;
@@ -1844,14 +1905,26 @@ body.motion-on .ken-burns { animation: kb 26s infinite alternate ease-in-out; }
               live.url = URL.createObjectURL(blob);
             }
             done++;
+            consecutiveFailures = 0;
             offlineCacheStatus(`Saving photos to the tablet… ${done}/${total}`);
+          } else {
+            // Not cacheable in any form (oversize gif etc.) — skip it for good
+            rec.noCache = true;
+            await dbPut(rec);
           }
         } catch (e) {
           if (isQuotaError(e)) {
             offlineCacheStatus('Tablet storage is full — remaining photos will stream from Drive.');
             return;
           }
-          // Individual failures (403, network blip) just stay in streaming mode
+          // Circuit breaker: if downloads keep failing (network down, API
+          // blocked), stop grinding through the whole list — photos keep
+          // streaming, and the next sync retries automatically.
+          consecutiveFailures++;
+          if (consecutiveFailures >= 6) {
+            offlineCacheStatus(`${done}/${total} saved — downloads unavailable right now, will retry after the next sync.`);
+            return;
+          }
         }
         await new Promise(r => setTimeout(r, 400)); // gentle pace, stay smooth
       }
@@ -2167,7 +2240,11 @@ body.motion-on .ken-burns { animation: kb 26s infinite alternate ease-in-out; }
       media.preload = 'metadata';
       if (photo.thumbnailUrl) media.poster = photo.thumbnailUrl;
       media.addEventListener('loadedmetadata', () => {
-        if (media.videoWidth && media.videoHeight) photo.aspect = media.videoWidth / media.videoHeight;
+        if (media.videoWidth && media.videoHeight) {
+          photo.aspect = media.videoWidth / media.videoHeight;
+          const live = STATE.photos.find(p => p.id === photo.id);
+          if (live) live.aspect = photo.aspect;
+        }
         markMediaReady(media, photo, box, onReady);
         media.play().catch(() => {});
       }, { once: true });
@@ -2182,7 +2259,13 @@ body.motion-on .ken-burns { animation: kb 26s infinite alternate ease-in-out; }
       }, { once: true });
     } else {
       media.onload = () => {
-        if (media.naturalWidth && media.naturalHeight) photo.aspect = media.naturalWidth / media.naturalHeight;
+        if (media.naturalWidth && media.naturalHeight) {
+          photo.aspect = media.naturalWidth / media.naturalHeight;
+          // Also stamp the live photo entry — after a sync rebuilds the list,
+          // `photo` can be a stale reference and relayout would misfit the box
+          const live = STATE.photos.find(p => p.id === photo.id);
+          if (live) live.aspect = photo.aspect;
+        }
         // Decode off the main thread before fading in, so the crossfade
         // never stutters on a big JPEG's first paint.
         const finish = () => markMediaReady(media, photo, box, onReady);

@@ -117,6 +117,10 @@ test('Drive photos are saved to the tablet for offline display', () => {
   assert.match(html, /function downscaleImageBlob/);
   assert.match(html, /offlineCache:\s*s\.offlineCache !== false/);
   assert.match(html, /navigator\.storage\.persist/);
+  // alt=media can redirect without CORS — the lh3 fallback keeps caching alive
+  assert.match(html, /function driveLh3Url/);
+  assert.match(html, /lh3\.googleusercontent\.com\/d\//);
+  assert.match(html, /consecutiveFailures/);
 });
 
 test('Frame shell works offline as a PWA', async () => {
@@ -136,6 +140,21 @@ test('Layout adapts to portrait orientation and dynamic viewports', () => {
   assert.match(html, /orientation: portrait/);
   assert.match(html, /100dvh/);
   assert.match(html, /safe-area-inset/);
+});
+
+test('Guest photos merge with the family folder and shuffle together', () => {
+  assert.match(html, /function activeDriveFolders/);
+  assert.match(html, /function listDriveFolder/);
+  assert.match(html, /Family \+ guest/);
+  assert.match(html, /driveScope: scope/);
+  assert.match(html, /prevBlobs/);
+  assert.match(html, /shuffle\(photos\)/);
+});
+
+test('Layout is fluid for S7+ fullscreen (clamp-based sizing)', () => {
+  assert.match(html, /--frame-w: clamp\(/);
+  assert.match(html, /font-size: clamp\(/);
+  assert.match(html, /min-width: clamp\(/);
 });
 
 test('Weather is locked to American Fork, Utah', () => {
